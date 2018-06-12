@@ -17,10 +17,9 @@ limitations under the License.
 import argparse
 import binascii
 import json
-
 import sys
-sys.path.extend(["../../"])
-from bbc1.app import app_support_lib, id_lib, token_lib
+
+from bbc1.lib import app_support_lib, id_lib, token_lib
 from bbc1.core import bbc_app
 from bbc1.core.bbc_config import DEFAULT_CORE_PORT
 from bbc1.core import bbclib
