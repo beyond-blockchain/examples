@@ -196,8 +196,9 @@ def issue_to_user(name, amount, dic_currencies, dic_users):
 
     mint.issue(dic_users[name].user_id, value, keypair=currency.keypair)
 
-    print("%f%s is issued to %s." % (value / (10 ** currency_spec.decimal),
-            currency_spec.symbol, name))
+    value_string = ("{0:.%df}" % (currency_spec.decimal)).format(
+            value / (10 ** currency_spec.decimal))
+    print("%s%s is issued to %s." % (value_string, currency_spec.symbol, name))
 
 
 def list_users(dic):
@@ -272,9 +273,10 @@ def show_user(name, dic_currencies, dic_users):
     currency_spec = mint.get_currency_spec()
 
     value = mint.get_balance_of(dic_users[name].user_id)
+    value_string = ("{0:.%df}" % (currency_spec.decimal)).format(
+            value / (10 ** currency_spec.decimal))
 
-    print("balance = %f%s." % (value / (10 ** currency_spec.decimal),
-            currency_spec.symbol))
+    print("balance = %s%s." % (value_string, currency_spec.symbol))
 
 
 def sys_check(args):
@@ -304,11 +306,16 @@ def swap_between_users(name, amount1, amount2, currency_name, dic_currencies,
             keypair_this=user.keypair, keypair_that=counter_user.keypair,
             keypair_mint=currency.keypair,
             keypair_counter_mint=counter_currency.keypair)
-    time.sleep(1)
+    time.sleep(1) # this should be unnecessary but token_lib is incomplete now.
 
-    print("%f%s is transferred to %s." % (value1 / (10 ** currency_spec.decimal),
+    value1_string = ("{0:.%df}" % (currency_spec.decimal)).format(
+            value1 / (10 ** currency_spec.decimal))
+    value2_string = ("{0:.%df}" % (counter_currency_spec.decimal)).format(
+            value2 / (10 ** counter_currency_spec.decimal))
+
+    print("%f%s is transferred to %s." % (value1_string,
             currency_spec.symbol, name))
-    print("%f%s is transferred from %s." % (value2 / (10 ** counter_currency_spec.decimal),
+    print("%f%s is transferred from %s." % (value2_string,
             counter_currency_spec.symbol, name))
 
 
@@ -326,7 +333,9 @@ def transfer_to_user(name, amount, dic_currencies, dic_users):
     mint.transfer(user.user_id, dic_users[name].user_id, value,
             keypair_from=user.keypair, keypair_mint=currency.keypair)
 
-    print("%f%s is transferred to %s." % (value / (10 ** currency_spec.decimal),
+    value_string = ("{0:.%df}" % (currency_spec.decimal)).format(
+            value / (10 ** currency_spec.decimal))
+    print("%s%s is transferred to %s." % (value_string,
             currency_spec.symbol, name))
 
 
