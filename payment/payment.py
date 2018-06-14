@@ -18,6 +18,7 @@ import argparse
 import binascii
 import json
 import sys
+import time
 
 from bbc1.lib import app_support_lib, id_lib, token_lib
 from bbc1.core import bbc_app
@@ -108,6 +109,16 @@ def argument_parser():
                         help='Show status of user or currency')
     parser.add_argument('user_name', nargs='?', action='store', default=None,
                         help='A user name')
+
+    # swap command
+    parser = subparsers.add_parser('swap',
+                        help='Atomically swap currency tokens between users')
+    parser.add_argument('amount1', type=float, action='store',
+                        help='Token amount')
+    parser.add_argument('user_name', action='store', help='A user name')
+    parser.add_argument('amount2', type=float, action='store',
+                        help='Token amount')
+    parser.add_argument('currency_name', action='store', help='currency name')
 
     # transfer command
     parser = subparsers.add_parser('transfer',
@@ -243,7 +254,8 @@ def select_user(name, dic, file_name):
 
 
 def setup():
-    tmpclient = bbc_app.BBcAppClient(port=DEFAULT_CORE_PORT, loglevel="all")
+    tmpclient = bbc_app.BBcAppClient(port=DEFAULT_CORE_PORT, multiq=False,
+            loglevel="all")
     tmpclient.domain_setup(domain_id)
     tmpclient.callback.synchronize()
     tmpclient.unregister_from_core()
@@ -267,6 +279,37 @@ def show_user(name, dic_currencies, dic_users):
 
 def sys_check(args):
     return
+
+
+def swap_between_users(name, amount1, amount2, currency_name, dic_currencies,
+        dic_users):
+    _, currency = get_selected(dic_currencies)
+    _, user = get_selected(dic_users)
+    counter_currency = dic_currencies[currency_name]
+    counter_user = dic_users[name]
+
+    idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
+    mint = token_lib.BBcMint(domain_id, currency.user_id, currency.user_id,
+            idPubkeyMap)
+    counter_mint = token_lib.BBcMint(domain_id,
+            counter_currency.user_id, counter_currency.user_id, idPubkeyMap)
+
+    currency_spec = mint.get_currency_spec()
+    counter_currency_spec = counter_mint.get_currency_spec()
+    value1 = int(amount1 * (10 ** currency_spec.decimal))
+    value2 = int(amount2 * (10 ** counter_currency_spec.decimal))
+
+    mint.swap(counter_mint, user.user_id, counter_user.user_id,
+            value1, value2,
+            keypair_this=user.keypair, keypair_that=counter_user.keypair,
+            keypair_mint=currency.keypair,
+            keypair_counter_mint=counter_currency.keypair)
+    time.sleep(1)
+
+    print("%f%s is transferred to %s." % (value1 / (10 ** currency_spec.decimal),
+            currency_spec.symbol, name))
+    print("%f%s is transferred from %s." % (value2 / (10 ** counter_currency_spec.decimal),
+            counter_currency_spec.symbol, name))
 
 
 def transfer_to_user(name, amount, dic_currencies, dic_users):
@@ -341,6 +384,13 @@ if __name__ == '__main__':
         if parsed_args.user_name is not None:
             show_user(name=parsed_args.user_name,
                     dic_currencies=dic_currencies, dic_users=dic_users)
+
+    elif parsed_args.command_type == "swap":
+        swap_between_users(name=parsed_args.user_name,
+                amount1=parsed_args.amount1,
+                amount2=parsed_args.amount2,
+                currency_name=parsed_args.currency_name,
+                dic_currencies=dic_currencies, dic_users=dic_users)
 
     elif parsed_args.command_type == "transfer":
         transfer_to_user(name=parsed_args.user_name, amount=parsed_args.amount,
