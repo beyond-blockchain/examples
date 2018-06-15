@@ -313,9 +313,9 @@ def swap_between_users(name, amount1, amount2, currency_name, dic_currencies,
     value2_string = ("{0:.%df}" % (counter_currency_spec.decimal)).format(
             value2 / (10 ** counter_currency_spec.decimal))
 
-    print("%f%s is transferred to %s." % (value1_string,
+    print("%s%s is transferred to %s." % (value1_string,
             currency_spec.symbol, name))
-    print("%f%s is transferred from %s." % (value2_string,
+    print("%s%s is transferred from %s." % (value2_string,
             counter_currency_spec.symbol, name))
 
 
