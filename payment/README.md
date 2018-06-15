@@ -9,11 +9,9 @@ This app allows a user to do the following:
 * show status (balances, etc.) of currencies
 
 # How to use
-1. Start bbc_core.py in a terminal
-    ```
-    cd ../../bbc1/core
-    python bbc_core.py
-    ```
+1. Start bbc_core.py
+  * See [tutorials](https://github.com/beyond-blockchain/bbc1/tree/develop/docs)
+  * Those tutorials are in Japanese for the time being.
 2. Create a domain.
     ```
     python payment.py setup
@@ -56,6 +54,10 @@ This app allows a user to do the following:
     * Transfer the currency tokens to a user
         ```
         python payment.py transfer [amount] [username]
+        ```
+    * Swap between two currency tokens between two users
+        ```
+        python payment.py swap [-h] amount1 user_name amount2 currency_name
         ```
       
 5. Status commands
