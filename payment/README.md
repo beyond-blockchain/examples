@@ -55,6 +55,10 @@ This app allows a user to do the following:
         ```
         python payment.py transfer [amount] [username]
         ```
+    * Switch between two currency tokens between two users
+        ```
+        python payment.py swap [-h] amount1 user_name amount2 currency_name
+        ```
       
 5. Status commands
     * Show the currency status (not implemented yet)
