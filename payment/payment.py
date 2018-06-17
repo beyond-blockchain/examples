@@ -96,7 +96,7 @@ def argument_parser():
     parser.add_argument('user_name', action='store', help='A user name')
 
     # setup command
-    parser = subparsers.add_parser('setup', help='Setup domain and super user')
+    parser = subparsers.add_parser('setup', help='Setup domain')
 
     # set-condition command
     parser = subparsers.add_parser('set-condition',
