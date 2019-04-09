@@ -143,7 +143,7 @@ def clear_selected(dic):
 
 def define_currency(name, symbol, file, dic_currencies):
     idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
-    (mint_id, keypairs) = idPubkeyMap.create_user_id(num_pubkeys=1)
+    mint_id, keypairs = idPubkeyMap.create_user_id(num_pubkeys=1)
 
     f = open(file, 'r')
     j_currency_spec = json.load(f)
@@ -168,7 +168,7 @@ def define_currency(name, symbol, file, dic_currencies):
 
 def define_user(name, dic_users):
     idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
-    (user_id, keypairs) = idPubkeyMap.create_user_id(num_pubkeys=1)
+    user_id, keypairs = idPubkeyMap.create_user_id(num_pubkeys=1)
 
     clear_selected(dic_users)
     dic_users[name] = User(user_id, keypairs[0], True)
