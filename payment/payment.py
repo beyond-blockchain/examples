@@ -142,6 +142,13 @@ def clear_selected(dic):
 
 
 def define_currency(name, symbol, file, dic_currencies):
+    if name in dic_currencies:
+        print("currency %s is already defined." % (name))
+        return
+    if name in dic_users:
+        print("%s is already defined as a user name." % (name))
+        return
+
     idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
     mint_id, keypairs = idPubkeyMap.create_user_id(num_pubkeys=1)
 
@@ -167,6 +174,13 @@ def define_currency(name, symbol, file, dic_currencies):
 
 
 def define_user(name, dic_users):
+    if name in dic_users:
+        print("user %s is already defined." % (name))
+        return
+    if name in dic_currencies:
+        print("%s is already defined as a currency name." % (name))
+        return
+
     idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
     user_id, keypairs = idPubkeyMap.create_user_id(num_pubkeys=1)
 
