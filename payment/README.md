@@ -11,6 +11,7 @@ This app allows a user to do the following:
 # How to use
 1. Start bbc_core.py
   * See [tutorials](https://github.com/beyond-blockchain/bbc1/tree/develop/docs)
+  * See [tutorial slides](https://speakerdeck.com/beyondblockchain/bbc-1-hands-on-digital-currency-transfer-and-swap)
   * Those tutorials are in Japanese for the time being.
 2. Create a domain.
     ```
@@ -57,7 +58,7 @@ This app allows a user to do the following:
         ```
     * Swap between two currency tokens between two users
         ```
-        python payment.py swap [-h] amount1 user_name amount2 currency_name
+        python payment.py swap amount1 user_name amount2 currency_name2
         ```
       
 5. Status commands
