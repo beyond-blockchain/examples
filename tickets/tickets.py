@@ -277,6 +277,10 @@ def show_user(name, dic_services, dic_users):
     idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
     service = ticket_lib.BBcTicketService(domain_id, service_user.user_id,
             service_user.user_id, idPubkeyMap)
+    ticket_list = service.get_balance_of(dic_users[name].user_id)
+    for ticket in ticket_list:
+        print("Ticket id: %s" % binascii.b2a_hex(ticket[0]).decode())
+        print("Ticket State: %s" % ticket[1])
 
 # FIXME
 #    print("balance = %s%s." % (value_string, currency_spec.symbol))
@@ -360,7 +364,7 @@ if __name__ == '__main__':
     elif parsed_args.command_type == "status":
         if parsed_args.user_name is not None:
             show_user(name=parsed_args.user_name,
-                    dic_currencies=dic_currencies, dic_users=dic_users)
+                    dic_services=dic_services, dic_users=dic_users)
 
     elif parsed_args.command_type == "transfer":
         transfer_to_user(name=parsed_args.user_name,
