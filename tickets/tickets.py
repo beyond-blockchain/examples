@@ -277,13 +277,25 @@ def show_user(name, dic_services, dic_users):
     idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
     service = ticket_lib.BBcTicketService(domain_id, service_user.user_id,
             service_user.user_id, idPubkeyMap)
-    ticket_list = service.get_balance_of(dic_users[name].user_id)
-    for ticket in ticket_list:
-        print("Ticket id: %s" % binascii.b2a_hex(ticket[0]).decode())
-        print("Ticket State: %s" % ticket[1])
+    ticket_dict = service.get_balance_of(dic_users[name].user_id)
+    for ticket_id, ticket in ticket_dict.items():
+        print("%s: %d%s" % (binascii.b2a_hex(ticket_id).decode(), ticket.spec.value, ticket.spec.unit))
 
 # FIXME
 #    print("balance = %s%s." % (value_string, currency_spec.symbol))
+
+
+def show_all_tickets(dic_services, dic_users):
+    _, service_user = get_selected(dic_services)
+
+    idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
+    service = ticket_lib.BBcTicketService(domain_id, service_user.user_id,
+            service_user.user_id, idPubkeyMap)
+    for user_name, user in dic_users.items():
+        ticket_dict = service.get_balance_of(user.user_id)
+        assert ticket_dict
+        for ticket_id, ticket in ticket_dict.items():
+            print("%s: %d%s" % (binascii.b2a_hex(ticket_id).decode(), ticket.spec.value, ticket.spec.unit))
 
 
 def sys_check(args):
@@ -365,6 +377,8 @@ if __name__ == '__main__':
         if parsed_args.user_name is not None:
             show_user(name=parsed_args.user_name,
                     dic_services=dic_services, dic_users=dic_users)
+        else:
+            show_all_tickets(dic_services, dic_users)
 
     elif parsed_args.command_type == "transfer":
         transfer_to_user(name=parsed_args.user_name,
