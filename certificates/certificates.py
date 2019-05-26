@@ -15,11 +15,14 @@ See the License for the specific language governing permissions and
 limitations under the License.
 """
 import argparse
+import bbc1
 import binascii
+import datetime
 import json
 import os
 import sys
 import time
+import urllib
 import xml.etree.ElementTree as ET
 
 from bbc1.lib import app_support_lib, id_lib, registry_lib
@@ -28,7 +31,7 @@ from bbc1.core.bbc_error import *
 from bbc1.core.ethereum import bbc_ethereum
 from bbc1.core.message_key_types import KeyType
 from bbc1.core.subsystem_tool_lib import wait_check_result_msg_type
-import bbc1
+from brownie import *
 
 
 F_JSON_REG_INFO = 'certificate_registry_info.json'
@@ -105,7 +108,7 @@ class Certifier:
 
         if self.is_verbose:
             print("xml: {0}".format(ET.tostring(certificate.document.root,
-                    encoding="utf-8").decode("utf-8")))
+                    encoding='utf-8').decode('utf-8')))
 
         dic = self.get_verification_dict(certificate)
 
@@ -127,8 +130,18 @@ class Certifier:
             return
 
         subtree = dic[b'subtree']
-        print(spec[b'contract_address'].decode('utf-8'))
-        print(subtree)
+        s = ''
+        for directive in subtree:
+            s += 'r-' if directive[b'position'] == b'right' else 'l-'
+            s += directive[b'digest'].decode('utf-8') + ':'
+        s = s[:-1]
+
+        qdic = {}
+        qdic['certificate'] = ET.tostring(certificate.document.root,
+                encoding='utf-8').decode('utf-8')
+        qdic['subtree'] = s
+
+        print(urllib.parse.urlencode(qdic))
 
 
     def register(self, certificate):
@@ -139,7 +152,7 @@ class Certifier:
 
         if self.is_verbose:
             print("xml: {0}".format(ET.tostring(document.root,
-                    encoding="utf-8").decode("utf-8")))
+                    encoding='utf-8').decode('utf-8')))
             print("registration to registry_lib.")
 
         if not self.is_test:
@@ -176,7 +189,7 @@ class Certifier:
 
         if self.is_verbose:
             print("xml: {0}".format(ET.tostring(certificate.document.root,
-                    encoding="utf-8").decode("utf-8")))
+                    encoding='utf-8').decode('utf-8')))
 
         dic = self.get_verification_dict(certificate)
 
@@ -225,8 +238,12 @@ class Certifier:
 
         if block_no <= 0:
             print("Failed: document digest is not found.")
+
         else:
-            print("Verified: Merkle root is stored at block %d." % (block_no))
+            block = network.web3.eth.getBlock(block_no)
+            print("Verified at: block {0}".format(block_no))
+            print("Date-Time: {0}".format(
+                    datetime.datetime.fromtimestamp(block['timestamp'])))
 
 
 class User:
@@ -357,9 +374,6 @@ def read_dic(domain_id):
 
 def sys_check(args):
     return
-    
-
-
 
 
 def write_dic(domain_id, dic):
