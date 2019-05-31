@@ -101,7 +101,7 @@ def index():
 
     os.chdir(prevdir)
 
-    block_no = eth.verify(digest, subtree)
+    block_no, digest0 = eth.verify_and_get_root(digest, subtree)
 
     if block_no <= 0:
         return failure_template('digest-mismatch', root=root)
@@ -114,7 +114,8 @@ def index():
             title='Certificate Vefirication - Success',
             root=root, network=S_NETWORK, contract=S_CONTRACT_ADDRESS,
             block_no=block_no, realtime=realtime,
-            get_date_string=get_date_string)
+            get_date_string=get_date_string,
+            merkle_root=binascii.b2a_hex(digest0).decode())
 
 
 if __name__ == '__main__':
