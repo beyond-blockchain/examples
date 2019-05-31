@@ -1,0 +1,45 @@
+{% extends "layout.html" %}
+{% block content %}
+<p class="animated shake delay-1s"style="color: Red;" align="center">
+<i class="fas fa-times-circle fa-7x"></i>NO GOOD
+</p>
+<p>
+<b>Failed to Verify the Certificate:</b>
+{% if reason == 'no-query' %}
+No query string is present, or the specified query string is incomplete.
+{% elif reason == 'xml-syntax' %}
+The specified certificate is not correctly formatted in XML.
+{% elif reason == 'subtree-syntax' %}
+The specified Merkle subtree is not encoded properly.
+{% elif reason == 'digest-mismatch' %}
+The calculated Merkle root does not match with the stored value.
+{% endif %}
+</p>
+
+{% if root != '' %}
+<div class="headline">Certificate</div>
+<div class="elements">
+<dl>
+{% for e in root %}
+<dt>{{ e.tag }}:</dt>
+<dd>
+{% if e.tag == 'date' %}
+{{ get_date_string(e.text) }}
+{% else %}
+{{ e.text }}
+{% endif %}
+</dd>
+{% endfor %}
+</dl>
+</div>
+{% endif %}
+
+<div class="headline">Verifier Information</div>
+<div class="elements">
+<dl>
+<dt>Ethereum Network:</dt><dd>{{ network }}</dd>
+<dt>Smart Contract:</dt><dd><span style="font-size: 10px">{{ contract }}</span></dd>
+</dl>
+</div>
+
+{% endblock %}
