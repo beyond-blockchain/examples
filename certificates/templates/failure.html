@@ -1,10 +1,12 @@
 {% extends "layout.html" %}
 {% block content %}
-<p class="animated shake delay-1s"style="color: Red;" align="center">
-<i class="fas fa-times-circle fa-7x"></i>NO GOOD
+<p class="animated shake delay-1s" style="color: Red;" align="center">
+<i class="fas fa-times-circle fa-7x"></i><br/>
+NO GOOD
 </p>
-<p>
-<b>Failed to Verify the Certificate:</b>
+<div class="animated shake delay-1s">
+<p class="box">
+<b>Failed to Verify the Certificate!</b><br/>
 {% if reason == 'no-query' %}
 No query string is present, or the specified query string is incomplete.
 {% elif reason == 'xml-syntax' %}
@@ -15,7 +17,7 @@ The specified Merkle subtree is not encoded properly.
 The calculated Merkle root does not match with the stored value.
 {% endif %}
 </p>
-
+</div>
 {% if root != '' %}
 <div class="headline">Certificate</div>
 <div class="elements">

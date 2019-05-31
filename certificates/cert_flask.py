@@ -29,10 +29,8 @@ from brownie import *
 from flask import Flask, render_template, request, redirect, url_for
 
 
-#S_CONTRACT_ADDRESS = '0xd123Ec03ACdbC36e4fA818c983C259049EE705e0'
-S_CONTRACT_ADDRESS = '0x7045D0d7994Dae892280e510E8fEaF6C3943EaDa'
-#S_NETWORK = 'ropsten'
-S_NETWORK = 'mainnet'
+S_CONTRACT_ADDRESS = '0xd123Ec03ACdbC36e4fA818c983C259049EE705e0'
+S_NETWORK = 'ropsten'
 
 
 app = Flask(__name__)
@@ -40,7 +38,8 @@ app = Flask(__name__)
 
 def failure_template(reason, root=''):
 
-    return render_template('failure.html', title='Certification - Failure',
+    return render_template('failure.html',
+            title='Certificate Verification - Failure',
             network=S_NETWORK, contract=S_CONTRACT_ADDRESS,
             reason=reason, root=root,
             get_date_string=get_date_string)
@@ -111,7 +110,8 @@ def index():
 
     realtime = datetime.datetime.fromtimestamp(block['timestamp'])
 
-    return render_template('success.html', title='Certification - Success',
+    return render_template('success.html',
+            title='Certificate Vefirication - Success',
             root=root, network=S_NETWORK, contract=S_CONTRACT_ADDRESS,
             block_no=block_no, realtime=realtime,
             get_date_string=get_date_string)
