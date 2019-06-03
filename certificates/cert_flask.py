@@ -73,8 +73,15 @@ def index():
 
     dat = bytearray()
     for e in root:
-        s = ET.tostring(e, encoding='utf-8')
-        dat.extend(hashlib.sha256(s).digest())
+        if e.tag == 'digest':
+            if all(c in string.hexdigits for c in e.text):
+                digest0 = binascii.a2b_hex(e.text)
+            else:
+                digest0 = bytes()
+            dat.extend(digest0)
+        else:
+            s = ET.tostring(e, encoding='utf-8')
+            dat.extend(hashlib.sha256(s).digest())
 
     digest = hashlib.sha256(bytes(dat)).digest()
 
