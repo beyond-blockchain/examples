@@ -18,6 +18,7 @@ import argparse
 import bbc1
 import binascii
 import datetime
+import hashlib
 import json
 import os
 import sys
@@ -88,12 +89,7 @@ class Certifier:
 
     def get_verification_dict(self, certificate):
 
-        digest = self.registry.get_document_digest(
-            certificate.document.document_id
-        )
-
-        if digest is None:
-            return None
+        digest = hashlib.sha256(certificate.document.file()).digest()
 
         self.client.verify_in_ledger_subsystem(None, digest)
         dat = wait_check_result_msg_type(self.client.callback,
