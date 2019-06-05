@@ -1,4 +1,5 @@
-{% extends "layout.html" %}
+{% import 'macro.html' as macros %}
+{% extends 'layout.html' %}
 {% block content %}
 <p class="animated flipInY delay-1s" style="color: Green;" align="center">
 <i class="fas fa-check-circle fa-7x"></i><br/>
@@ -12,31 +13,9 @@ matching the calculated Merkle root with the one stored in the Ethereum
 smart contract below.
 </p>
 </div>
-<div class="headline">Certificate</div>
-<div class="elements">
-<dl>
-{% for e in root %}
-<dt>{{ e.tag }}:</dt>
-<dd>
-{% if e.tag == 'date' %}
-{{ get_date_string(e.text) }}
-{% else %}
-{{ e.text }}
-{% endif %}
-</dd>
-{% endfor %}
-</dl>
-</div>
 
-<div class="headline">Verifier Information</div>
-<div class="elements">
-<dl>
-<dt>Ethereum Network:</dt><dd>{{ network }}</dd>
-<dt>Smart Contract:</dt><dd><span style="font-size: 2.2vw">{{ contract }}</span></dd>
-<dt>Block Number:</dt><dd>{{ block_no }}</dd>
-<dt>Timestamp:</dt><dd>{{ realtime }}</dd>
-<dt>Merkle Root:</dt><dd><span style="font-size: 1.5vw">{{ merkle_root }}</span></dd>
-</dl>
-</div>
+{{ macros.show_certificate(root, get_date_string=get_date_string) }}
+
+{{ macros.show_verifier(network, contract, block_no=block_no, realtime=realtime, merkle_root=merkle_root) }}
 
 {% endblock %}

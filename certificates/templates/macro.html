@@ -1,0 +1,33 @@
+{% macro show_certificate(root, get_date_string=None) -%}
+<div class="headline">Certificate</div>
+<div class="elements">
+<dl>
+{% for e in root %}
+<dt>{{ e.tag }}:</dt>
+<dd>
+{% if e.tag == 'date' %}
+{{ get_date_string(e.text) }}
+{% else %}
+{{ e.text }}
+{% endif %}
+</dd>
+{% endfor %}
+</dl>
+</div>
+{%- endmacro %}
+
+
+{% macro show_verifier(network, contract, block_no=0, realtime=None, merkle_root=None) -%}
+<div class="headline">Verifier Information</div>
+<div class="elements">
+<dl>
+<dt>Ethereum Network:</dt><dd>{{ network }}</dd>
+<dt>Smart Contract:</dt><dd><span style="font-size: 2.2vw">{{ contract }}</span></dd>
+{% if block_no > 0 %}
+<dt>Block Number:</dt><dd>{{ block_no }}</dd>
+<dt>Timestamp:</dt><dd>{{ realtime }}</dd>
+<dt>Merkle Root:</dt><dd><span style="font-size: 1.5vw">{{ merkle_root }}</span></dd>
+{% endif %}
+</dl>
+</div>
+{%- endmacro %}
