@@ -78,7 +78,9 @@ the cryptographic digest of the certificate (for proof),
 bbc1-lib-registry takes each element (``<id/>``, ``<name/>``,
 ``<membership/>``, ``<express-at/>`` of the above), calculate their
 SHA-256 digests, concatinate them all, and then calculate its SHA-256
-digest.
+digest. For best results, strip spaces including new lines before and
+after all first level elements within the certificates. See provided
+sample XML files.
 
 There are tags that give special meanings to their text.
 
@@ -96,14 +98,18 @@ How to use certificates.py
 --------------------------
 
 Below, it is assumed that bbc_core.py runs at the user’s home directory,
-and Ethereum’s ropsten testnet is used. At first, bbc_core.py should be
-stopped.
+and Ethereum’s ropsten testnet is used (and you have a sufficient amount
+of ETH (1 would be more than enough) in an account in ropsten). At
+first, bbc_core.py should be stopped.
 
 1.  Set up ledger subsystem (this writes to BBc-1 core’s config file)
 
     ::
 
        eth_subsystem_tool.py -w ~/.bbc1 auto [infura.io project ID] [private key]
+
+    Take note (make copy) of the displayed contract address that was
+    deployed by the command above.
 
 2.  Start bbc_core.py
 
@@ -143,13 +149,13 @@ stopped.
 
        ::
 
-          python certificates.py -d [domain id] register [certificate XML file]
+          python certificates.py -w ~/.bbc1 -d [domain id] register [certificate XML file]
 
     -  Multiple certificates in one file
 
        ::
 
-          python certificates.py -d [domain id] -m register [certificate XML file]
+          python certificates.py -w ~/.bbc1 -d [domain id] -m register [certificate XML file]
 
 9.  Verify certificates
 
@@ -157,13 +163,13 @@ stopped.
 
        ::
 
-          python certificates.py -d [domain id] verify [certificate XML file]
+          python certificates.py -w ~/.bbc1 -d [domain id] verify [certificate XML file]
 
     -  Multiple certificates in one file
 
        ::
 
-          python certificates.py -d [domain id] -m verify [certificate XML file]
+          python certificates.py -w ~/.bbc1 -d [domain id] -m verify [certificate XML file]
 
 10. Generate verification query strings for certificates
 
@@ -171,13 +177,13 @@ stopped.
 
        ::
 
-          python certificates.py -d [domain id] query [certificate XML file]
+          python certificates.py -w ~/.bbc1 -d [domain id] query [certificate XML file]
 
     -  Multiple certificates in one file
 
        ::
 
-          python certificates.py -d [domain] -m query [certificate XML file]
+          python certificates.py -w ~/.bbc1 -d [domain] -m query [certificate XML file]
 
 How to use cert_flask.py
 ------------------------
@@ -185,6 +191,9 @@ How to use cert_flask.py
 This is a simple web service to verify a certificate using the query
 string generated using the **query** command of certificates.py The
 functionality is wrapped by index.py.
+
+Before use, make sure that **S_CONTRACT_ADDRESS** and **S_NETWORK** in
+cert_flask.py is modified according to your environment.
 
 ::
 
