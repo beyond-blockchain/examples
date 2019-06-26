@@ -316,20 +316,11 @@ def swap_between_users(name, amount1, amount2, currency_name, dic_currencies,
     value1 = int(amount1 * (10 ** currency_spec.decimal))
     value2 = int(amount2 * (10 ** counter_currency_spec.decimal))
 
-    tx = mint.transfer(user.user_id, counter_user.user_id, value1)
-    counter_mint.transfer(counter_user.user_id, user.user_id, value2,
-            transaction=tx)
-    mint.store.sign(tx, counter_user.user_id, counter_user.keypair)
-    mint.store.sign(tx, mint.mint_id, currency.keypair)
-    mint.store.sign(tx, counter_mint.mint_id, counter_currency.keypair)
-    mint.store.sign_and_insert(tx, user.user_id, user.keypair,
-            mint.idPublickeyMap)
-
-#    mint.swap(counter_mint, user.user_id, counter_user.user_id,
-#            value1, value2,
-#            keypair_this=user.keypair, keypair_that=counter_user.keypair,
-#            keypair_mint=currency.keypair,
-#            keypair_counter_mint=counter_currency.keypair)
+    mint.swap(counter_mint, user.user_id, counter_user.user_id,
+            value1, value2,
+            keypair_this=user.keypair, keypair_that=counter_user.keypair,
+            keypair_mint=currency.keypair,
+            keypair_counter_mint=counter_currency.keypair)
     time.sleep(1) # this should be unnecessary but token_lib is incomplete now.
 
     value1_string = ("{0:.%df}" % (currency_spec.decimal)).format(
