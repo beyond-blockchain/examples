@@ -279,10 +279,10 @@ def setup():
 
 
 def show_user(name, dic_currencies, dic_users):
-    _, currency = get_selected(dic_currencies)
+    _, mint_info = get_selected(dic_currencies)
 
     idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
-    mint = token_lib.BBcMint(domain_id, currency.user_id, currency.user_id,
+    mint = token_lib.BBcMint(domain_id, mint_info.user_id, mint_info.user_id,
             idPubkeyMap)
 
     currency_spec = mint.get_currency_spec()
