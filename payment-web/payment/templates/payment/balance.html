@@ -1,0 +1,28 @@
+{% import 'payment/macro.html' as macros %}
+{% extends 'payment/layout.html' %}
+{% block content %}
+<h1>PAYMENT - BALANCE/TRANSFER</h1>
+<p>
+You are {{name}}<br/>
+Your balance is {{balance}} {{symbol}}
+</p>
+<form action="/payment/update.do" method="post">
+  <input type="hidden" name="name" value="{{name}}">
+  <input type="hidden" name="user_id" value="{{user_id}}">
+  <input type="submit" value="Update">
+</form>
+<form action="/payment/transfer.do" method="post">
+  <div>
+    <label for="name">Transfer to : </label>
+    <input type="text" id="to_name" name="to_name">
+  </div>
+  <div>
+    <label for="amount">Amount : </label>
+    <input type="text" id="amount" name="amount">
+    {{symbol}}
+  </div>
+  <input type="hidden" name="name" value="{{name}}">
+  <input type="hidden" name="user_id" value="{{user_id}}">
+  <input type="submit" value="Transfer">
+</form>
+{% endblock %}
