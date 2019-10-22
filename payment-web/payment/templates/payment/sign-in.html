@@ -1,0 +1,12 @@
+{% import 'payment/macro.html' as macros %}
+{% extends 'payment/layout.html' %}
+{% block content %}
+<h1>PAYMENT - SIGN IN</h1>
+<form action="/payment/sign-in.do" method="post">
+  <div>
+    <label for="name">Name : </label>
+    <input type="text" id="name" name="name">
+  </div>
+  <input type="submit" value="Sign In">
+</form>
+{% endblock %}
