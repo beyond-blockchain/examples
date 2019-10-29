@@ -14,18 +14,21 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
+import base64
 import bbc1
 import binascii
 import datetime
 import hashlib
 import json
 import os
+import qrcode
 import requests
 import string
 import sys
 import time
 
-from flask import Blueprint, render_template, request, abort, jsonify
+from flask import Blueprint, render_template, request, session, abort, jsonify
+from io import BytesIO
 
 
 # Prior to use this web application, please define a currency using API,
@@ -49,7 +52,20 @@ def get_balance(name, user_id):
                 message=res['error']['message'])
 
     return render_template('payment/balance.html', name=name, user_id=user_id,
-            balance=res['balance'], symbol=res['symbol'])
+            balance=res['balance'], symbol=res['symbol'],
+            to_name=request.args.get('to_name'))
+
+
+def make_qr(s):
+    qr_img = qrcode.make(s)
+
+    buf = BytesIO()
+    qr_img.save(buf, format='png')
+
+    qr_b64s = base64.b64encode(buf.getvalue()).decode('utf-8')
+    qr_b64data = 'data:image/png;base64,{}'.format(qr_b64s)
+
+    return qr_b64data
 
 
 payment = Blueprint('payment', __name__, template_folder='templates',
@@ -58,16 +74,31 @@ payment = Blueprint('payment', __name__, template_folder='templates',
 
 @payment.route('/')
 def index():
+    if 'user_id' in session:
+        return get_balance(session['name'], session['user_id'])
+
     return render_template('payment/index.html')
 
 
-@payment.route('/sign-in')
+@payment.route('receive')
+def receive():
+    if 'user_id' not in session:
+        return render_template('payment/index.html')
+
+    name = session['name']
+
+    s_url = PREFIX_API + '/payment/transfer?to_name=' + name
+    qr_b64data = make_qr(s_url)
+
+    return render_template('payment/receive.html', name=name,
+            qr_b64data=qr_b64data, qr_name=s_url)
+
+
+@payment.route('/sign-in', methods=['GET', 'POST'])
 def sign_in():
-    return render_template('payment/sign-in.html')
+    if request.method == 'GET':
+        return render_template('payment/sign-in.html')
 
-
-@payment.route('/sign-in.do', methods=['POST'])
-def sign_in_do():
     name = request.form.get('name')
 
     if name is None or len(name) <= 0:
@@ -80,16 +111,25 @@ def sign_in_do():
         return render_template('payment/error.html',
                 message=res['error']['message'])
 
+    session['name'] = name
+    session['user_id'] = res['user_id']
+
     return get_balance(name, res['user_id'])
 
 
-@payment.route('/sign-up')
+@payment.route('/sign-out')
+def sign_out():
+    session.pop('user_id', None)
+    session.pop('name', None)
+
+    return render_template('payment/sign-in.html')
+
+
+@payment.route('/sign-up', methods=['GET', 'POST'])
 def sign_up():
-    return render_template('payment/sign-up.html')
+    if request.method == 'GET':
+        return render_template('payment/sign-up.html')
 
-
-@payment.route('/sign-up.do', methods=['POST'])
-def sign_up_do():
     name = request.form.get('name')
 
     if name is None or len(name) <= 0:
@@ -104,6 +144,9 @@ def sign_up_do():
 
     user_id = res['user_id']
 
+    session['name'] = name
+    session['user_id'] = user_id
+
     r = requests.post(PREFIX_API + '/api/issue/' + MINT_ID,
             data={'user_id': user_id, 'amount': INIT_AMOUNT})
 
@@ -114,10 +157,17 @@ def sign_up_do():
     return get_balance(name, user_id)
 
 
-@payment.route('/transfer.do', methods=['POST'])
-def transfer_do():
-    name = request.form.get('name')
-    user_id = request.form.get('user_id')
+@payment.route('/transfer', methods=['GET', 'POST'])
+def transfer():
+    if 'user_id' not in session:
+        return render_template('payment/index.html')
+
+    name = session['name']
+    user_id = session['user_id']
+
+    if request.method == 'GET':
+        return get_balance(name, user_id)
+
     to_name = request.form.get('to_name')
     amount = request.form.get('amount')
 
@@ -151,10 +201,13 @@ def transfer_do():
     return get_balance(name, user_id)
 
 
-@payment.route('/update.do', methods=['POST'])
-def update_do():
-    name = request.form.get('name')
-    user_id = request.form.get('user_id')
+@payment.route('/update')
+def update():
+    if 'user_id' not in session:
+        return render_template('payment/index.html')
+
+    name = session['name']
+    user_id = session['user_id']
 
     if name is None or len(name) <= 0:
         return render_template('payment/error.html',

@@ -75,6 +75,10 @@ class Store:
         self.db.setup_db(domain_id, NAME_OF_DB)
 
 
+    def close(self):
+        self.db.close_db(domain_id, NAME_OF_DB)
+
+
     def get_user(self, user_id, table):
         rows = self.db.exec_sql(
             domain_id,
@@ -155,14 +159,15 @@ def abort_by_missing_param(param):
 
 
 def get_balances_of(user_id, currencies):
-    idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
+    g.idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
 
     dics = []
     for currency in currencies:
         mint = token_lib.BBcMint(domain_id, currency.user_id, currency.user_id,
-                idPubkeyMap)
+                g.idPubkeyMap)
         currency_spec = mint.get_currency_spec()
         value = mint.get_balance_of(user_id)
+        mint.close()
 
         dics.append({
             'balance': ("{0:.%df}" % (currency_spec.decimal)).format(
@@ -189,9 +194,26 @@ def from_hex_to_user(g, hex_id, table):
 api = Blueprint('api', __name__)
 
 
+@api.after_request
+def after_request(response):
+    g.store.close()
+
+    if g.idPubkeyMap is not None:
+        g.idPubkeyMap.close()
+    if g.mint is not None:
+        g.mint.close()
+    if g.counter_mint is not None:
+        g.counter_mint.close()
+
+    return response
+
+
 @api.before_request
 def before_request():
     g.store = Store()
+    g.idPubkeyMap = None
+    g.mint = None
+    g.counter_mint = None
 
 
 @api.route('/')
@@ -243,14 +265,14 @@ def define_currency():
             'message': '{0} is already defined as a user name'.format(name)
         })
 
-    idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
-    mint_id, keypairs = idPubkeyMap.create_user_id(num_pubkeys=1)
+    g.idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
+    mint_id, keypairs = g.idPubkeyMap.create_user_id(num_pubkeys=1)
 
     currency_spec = token_lib.CurrencySpec(request.json)
 
-    mint = token_lib.BBcMint(domain_id, mint_id, mint_id, idPubkeyMap)
-    mint.set_condition(0, keypair=keypairs[0])
-    mint.set_currency_spec(currency_spec, keypair=keypairs[0])
+    g.mint = token_lib.BBcMint(domain_id, mint_id, mint_id, g.idPubkeyMap)
+    g.mint.set_condition(0, keypair=keypairs[0])
+    g.mint.set_currency_spec(currency_spec, keypair=keypairs[0])
 
     g.store.write_user(name, User(mint_id, keypairs[0]), 'currency_table')
 
@@ -278,14 +300,14 @@ def issue_to_user(hex_mint_id=None):
 
     user = from_hex_to_user(g, hex_user_id, 'user_table')
 
-    idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
-    mint = token_lib.BBcMint(domain_id, currency.user_id, currency.user_id,
-            idPubkeyMap)
+    g.idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
+    g.mint = token_lib.BBcMint(domain_id, currency.user_id, currency.user_id,
+            g.idPubkeyMap)
 
-    currency_spec = mint.get_currency_spec()
+    currency_spec = g.mint.get_currency_spec()
     value = int(float(amount) * (10 ** currency_spec.decimal))
 
-    mint.issue(user.user_id, value, keypair=currency.keypair)
+    g.mint.issue(user.user_id, value, keypair=currency.keypair)
 
     return jsonify({
         'amount': ('{0:.%df}' % (currency_spec.decimal)).format(
@@ -362,19 +384,19 @@ def swap_between_users(hex_mint_id=None, hex_counter_mint_id=None):
     user = from_hex_to_user(g, hex_user_id, 'user_table')
     counter_user = from_hex_to_user(g, hex_counter_user_id, 'user_table')
 
-    idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
-    mint = token_lib.BBcMint(domain_id, currency.user_id, currency.user_id,
-            idPubkeyMap)
-    counter_mint = token_lib.BBcMint(domain_id, counter_currency.user_id,
-            counter_currency.user_id, idPubkeyMap)
+    g.idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
+    g.mint = token_lib.BBcMint(domain_id, currency.user_id, currency.user_id,
+            g.idPubkeyMap)
+    g.counter_mint = token_lib.BBcMint(domain_id, counter_currency.user_id,
+            counter_currency.user_id, g.idPubkeyMap)
 
-    currency_spec = mint.get_currency_spec()
-    counter_currency_spec = counter_mint.get_currency_spec()
+    currency_spec = g.mint.get_currency_spec()
+    counter_currency_spec = g.counter_mint.get_currency_spec()
     value = int(float(amount) * (10 ** currency_spec.decimal))
     counter_value = int(
             float(counter_amount) * (10 ** counter_currency_spec.decimal))
 
-    mint.swap(counter_mint, user.user_id, counter_user.user_id,
+    g.mint.swap(g.counter_mint, user.user_id, counter_user.user_id,
             value, counter_value,
             keypair_this=user.keypair, keypair_that=counter_user.keypair,
             keypair_mint=currency.keypair,
@@ -412,14 +434,14 @@ def transfer_to_user(hex_mint_id=None):
     from_user = from_hex_to_user(g, hex_from_user_id, 'user_table')
     to_user = from_hex_to_user(g, hex_to_user_id, 'user_table')
 
-    idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
-    mint = token_lib.BBcMint(domain_id, currency.user_id, currency.user_id,
-            idPubkeyMap)
+    g.idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
+    g.mint = token_lib.BBcMint(domain_id, currency.user_id, currency.user_id,
+            g.idPubkeyMap)
 
-    currency_spec = mint.get_currency_spec()
+    currency_spec = g.mint.get_currency_spec()
     value = int(float(amount) * (10 ** currency_spec.decimal))
 
-    mint.transfer(from_user.user_id, to_user.user_id, value,
+    g.mint.transfer(from_user.user_id, to_user.user_id, value,
             keypair_from=from_user.keypair, keypair_mint=currency.keypair)
 
     return jsonify({
@@ -467,8 +489,8 @@ def define_user():
             'message': '{0} is already defined as a currency name'.format(name)
         })
 
-    idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
-    user_id, keypairs = idPubkeyMap.create_user_id(num_pubkeys=1)
+    g.idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
+    user_id, keypairs = g.idPubkeyMap.create_user_id(num_pubkeys=1)
 
     g.store.write_user(name, User(user_id, keypairs[0]), 'user_table')
 

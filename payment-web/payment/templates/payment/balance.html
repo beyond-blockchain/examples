@@ -6,23 +6,30 @@
 You are {{name}}<br/>
 Your balance is {{balance}} {{symbol}}
 </p>
-<form action="/payment/update.do" method="post">
-  <input type="hidden" name="name" value="{{name}}">
-  <input type="hidden" name="user_id" value="{{user_id}}">
+<form action="/payment/update" method="get">
   <input type="submit" value="Update">
 </form>
-<form action="/payment/transfer.do" method="post">
+<form action="/payment/transfer" method="post">
   <div>
     <label for="name">Transfer to : </label>
+    {% if to_name %}
+    {{to_name}}
+    <input type="hidden" id="to_name" name="to_name" value="{{to_name}}">
+    {% else %}
     <input type="text" id="to_name" name="to_name">
+    {% endif %}
   </div>
   <div>
     <label for="amount">Amount : </label>
     <input type="text" id="amount" name="amount">
     {{symbol}}
   </div>
-  <input type="hidden" name="name" value="{{name}}">
-  <input type="hidden" name="user_id" value="{{user_id}}">
   <input type="submit" value="Transfer">
 </form>
+<form action="/payment/receive" method="get">
+  <input type="submit" value="Receive">
+</form>
+<p>
+<a href="/payment/sign-out">sign out</a>
+</p>
 {% endblock %}
