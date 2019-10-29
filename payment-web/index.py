@@ -28,8 +28,11 @@ from payment.views import payment
 app.register_blueprint(payment, url_prefix='/payment')
 
 
+app.secret_key = '!jnTCz._JM6eDRQW!xiRpA!M.8GdZy6cHnjX.!pY3@3Q2AjD_oyQh'
+
+
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0')
 
 
 # end of index.py
