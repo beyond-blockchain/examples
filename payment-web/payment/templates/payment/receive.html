@@ -1,0 +1,9 @@
+{% import 'payment/macro.html' as macros %}
+{% extends 'payment/layout.html' %}
+{% block content %}
+<h1>PAYMENT - RECEIVE</h1>
+<p>
+You are {{name}}
+</p>
+<img src="{{qr_b64data}}" alt="{{qr_name}}"/>
+{% endblock %}
