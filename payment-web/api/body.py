@@ -25,17 +25,14 @@ import time
 
 from bbc1.core import bbc_app, bbclib
 from bbc1.core.bbc_config import DEFAULT_CORE_PORT
-from bbc1.lib import app_support_lib, id_lib, token_lib
+from bbc1.lib import id_lib, token_lib
+from bbc1.lib.app_support_lib import Database, TransactionLabel
+from bbc1.lib.app_support_lib import get_timestamp_in_seconds
 from flask import Blueprint, request, abort, jsonify, g
 
 
 NAME_OF_DB = 'payment_db'
 
-
-payment_tx_id_table_definition = [
-    ["tx_id", "BLOB"],
-    ["tx", "BLOB"],
-]
 
 payment_user_table_definition = [
     ["user_id", "BLOB"],
@@ -44,19 +41,42 @@ payment_user_table_definition = [
     ["private_key", "BLOB"],
 ]
 
+payment_tx_table_definition = [
+    ["tx_id", "BLOB"],
+    ["timestamp", "INTEGER"],
+    ["mint_id", "BLOB"],
+    ["from_name", "TEXT"],
+    ["to_name", "TEXT"],
+    ["amount", "TEXT"],
+    ["label", "TEXT"],
+]
+
 IDX_USER_ID = 0
 IDX_NAME    = 1
 IDX_PUBKEY  = 2
 IDX_PRIVKEY = 3
 
+IDX_TX_ID     = 0
+IDX_TIMESTAMP = 1
+IDX_MINT_ID   = 2
+IDX_FROM      = 3
+IDX_TO        = 4
+IDX_AMOUNT    = 5
+IDX_LABEL     = 6
+
+LABEL_JOINED = '__joined__'
+LABEL_SALT = 'label salt'
+
 
 domain_id = bbclib.get_new_id("payment_test_domain", include_timestamp=False)
+label_group_id = bbclib.get_new_id("payment_labels", include_timestamp=False)
 
 
 class User:
 
-    def __init__(self, user_id, keypair):
+    def __init__(self, user_id, name, keypair):
         self.user_id = user_id
+        self.name = name
         self.keypair = keypair
 
 
@@ -64,6 +84,7 @@ class User:
     def from_row(row):
         return User(
             row[IDX_USER_ID],
+            row[IDX_NAME],
             bbclib.KeyPair(privkey=row[IDX_PRIVKEY], pubkey=row[IDX_PUBKEY])
         )
 
@@ -71,13 +92,73 @@ class User:
 class Store:
 
     def __init__(self):
-        self.db = app_support_lib.Database()
+        self.db = Database()
         self.db.setup_db(domain_id, NAME_OF_DB)
 
 
     def close(self):
         self.db.close_db(domain_id, NAME_OF_DB)
 
+
+    def get_tx_list(self, mint_id, name=None, count=None, offset=None):
+        if offset is None:
+            offset = 0
+        if count is not None:
+            s_limit = ' limit {0}, {1}'.format(offset, count)
+        else:
+            s_limit = ''
+
+        if name is not None:
+            rows = self.db.exec_sql(
+                domain_id,
+                NAME_OF_DB,
+                'select * from tx_table where mint_id=? ' + \
+                'and (from_name=? or to_name=?) order by rowid desc' + s_limit,
+                mint_id,
+                name,
+                name
+            )
+            counts = self.db.exec_sql(
+                domain_id,
+                NAME_OF_DB,
+                'select count(*) from tx_table where mint_id=? ' + \
+                'and (from_name=? or to_name=?)',
+                mint_id,
+                name,
+                name
+            )
+
+        else:
+            rows = self.db.exec_sql(
+                domain_id,
+                NAME_OF_DB,
+                'select * from tx_table where mint_id=? ' + \
+                'order by rowid desc' + s_limit,
+                mint_id
+            )
+            counts = self.db.exec_sql(
+                domain_id,
+                NAME_OF_DB,
+                'select count(*) from tx_table where mint_id=?',
+                mint_id
+            )
+
+        number = int(counts[0][0])
+
+        dics = []
+        for row in rows:
+            dics.append({
+                'timestamp': row[IDX_TIMESTAMP],
+                'from_name': row[IDX_FROM],
+                'to_name': row[IDX_TO],
+                'amount': row[IDX_AMOUNT],
+                'label': row[IDX_LABEL]
+            })
+        return {
+            'count_before': int(offset),
+            'count_after': number - int(offset) - len(rows),
+            'transactions': dics,
+        }
 
     def get_user(self, user_id, table):
         rows = self.db.exec_sql(
@@ -115,6 +196,18 @@ class Store:
         return User.from_row(rows[0])
 
 
+    def setup(self):
+        self.db.create_table_in_db(domain_id, NAME_OF_DB, 'user_table',
+                payment_user_table_definition, primary_key=IDX_USER_ID,
+                indices=[IDX_NAME])
+        self.db.create_table_in_db(domain_id, NAME_OF_DB, 'currency_table',
+                payment_user_table_definition, primary_key=IDX_USER_ID,
+                indices=[IDX_NAME])
+        self.db.create_table_in_db(domain_id, NAME_OF_DB, 'tx_table',
+                payment_tx_table_definition, primary_key=IDX_TX_ID,
+                indices=[IDX_MINT_ID, IDX_FROM, IDX_TO])
+
+
     def user_exists(self, name, table):
         rows = self.db.exec_sql(
             domain_id,
@@ -125,23 +218,32 @@ class Store:
         return len(rows) > 0
 
 
-    def write_user(self, name, user, table):
+    def write_tx(self, tx_id, timestamp, mint_id, from_name, to_name, amount,
+            label):
+        self.db.exec_sql(
+            domain_id,
+            NAME_OF_DB,
+            'insert into tx_table values (?, ?, ?, ?, ?, ?, ?)',
+            tx_id,
+            timestamp,
+            mint_id,
+            from_name,
+            to_name,
+            amount,
+            label
+        )
+
+
+    def write_user(self, user, table):
         self.db.exec_sql(
             domain_id,
             NAME_OF_DB,
             'insert into ' + table + ' values (?, ?, ?, ?)',
             user.user_id,
-            name,
+            user.name,
             user.keypair.public_key,
             user.keypair.private_key
         )
-
-
-    def setup(self):
-        self.db.create_table_in_db(domain_id, NAME_OF_DB, 'user_table',
-                payment_user_table_definition, primary_key=0, indices=[1])
-        self.db.create_table_in_db(domain_id, NAME_OF_DB, 'currency_table',
-                payment_user_table_definition, primary_key=0, indices=[1])
 
 
 def abort_by_bad_content_type(content_type):
@@ -202,8 +304,6 @@ def after_request(response):
         g.idPubkeyMap.close()
     if g.mint is not None:
         g.mint.close()
-    if g.counter_mint is not None:
-        g.counter_mint.close()
 
     return response
 
@@ -213,7 +313,6 @@ def before_request():
     g.store = Store()
     g.idPubkeyMap = None
     g.mint = None
-    g.counter_mint = None
 
 
 @api.route('/')
@@ -274,7 +373,7 @@ def define_currency():
     g.mint.set_condition(0, keypair=keypairs[0])
     g.mint.set_currency_spec(currency_spec, keypair=keypairs[0])
 
-    g.store.write_user(name, User(mint_id, keypairs[0]), 'currency_table')
+    g.store.write_user(User(mint_id, name, keypairs[0]), 'currency_table')
 
     return jsonify({
         'name': name,
@@ -293,6 +392,10 @@ def issue_to_user(hex_mint_id=None):
     hex_user_id = request.form.get('user_id')
     amount = request.form.get('amount')
 
+    s_label = LABEL_JOINED
+    label_id = TransactionLabel.create_label_id(s_label, LABEL_SALT)
+    label = TransactionLabel(label_group_id, label_id=label_id)
+
     if hex_user_id is None:
         abort_by_missing_param('user_id')
     if amount is None:
@@ -307,7 +410,11 @@ def issue_to_user(hex_mint_id=None):
     currency_spec = g.mint.get_currency_spec()
     value = int(float(amount) * (10 ** currency_spec.decimal))
 
-    g.mint.issue(user.user_id, value, keypair=currency.keypair)
+    tx = g.mint.issue(user.user_id, value, keypair=currency.keypair,
+            label=label)
+
+    g.store.write_tx(tx.transaction_id, get_timestamp_in_seconds(tx),
+            currency.user_id, '', user.name, amount, s_label)
 
     return jsonify({
         'amount': ('{0:.%df}' % (currency_spec.decimal)).format(
@@ -371,6 +478,14 @@ def swap_between_users(hex_mint_id=None, hex_counter_mint_id=None):
     hex_counter_user_id = request.form.get('counter_user_id')
     amount = request.form.get('amount')
     counter_amount = request.form.get('counter_amount')
+    s_label = request.form.get('label')
+
+    if s_label is None or len(s_label) <= 0:
+        s_label = ''
+        label = None
+    else:
+        label_id = TransactionLabel.create_label_id(s_label, LABEL_SALT)
+        label = TransactionLabel(label_group_id, label_id=label_id)
 
     if hex_user_id is None:
         abort_by_missing_param('user_id')
@@ -387,20 +502,31 @@ def swap_between_users(hex_mint_id=None, hex_counter_mint_id=None):
     g.idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
     g.mint = token_lib.BBcMint(domain_id, currency.user_id, currency.user_id,
             g.idPubkeyMap)
-    g.counter_mint = token_lib.BBcMint(domain_id, counter_currency.user_id,
+    counter_mint = token_lib.BBcMint(domain_id, counter_currency.user_id,
             counter_currency.user_id, g.idPubkeyMap)
 
     currency_spec = g.mint.get_currency_spec()
-    counter_currency_spec = g.counter_mint.get_currency_spec()
+    counter_currency_spec = counter_mint.get_currency_spec()
     value = int(float(amount) * (10 ** currency_spec.decimal))
     counter_value = int(
             float(counter_amount) * (10 ** counter_currency_spec.decimal))
 
-    g.mint.swap(g.counter_mint, user.user_id, counter_user.user_id,
+    tx = g.mint.swap(counter_mint, user.user_id, counter_user.user_id,
             value, counter_value,
             keypair_this=user.keypair, keypair_that=counter_user.keypair,
             keypair_mint=currency.keypair,
             keypair_counter_mint=counter_currency.keypair)
+    counter_mint.close()
+
+    g.store.write_tx(tx.transaction_id, get_timestamp_in_seconds(tx),
+            currency.user_id, user.user_id, counter_user.user_id, amount,
+            s_label)
+    counter_txid = bytearray(tx.transaction_id)
+    counter_txid.extend(b'00')
+    g.store.write_tx(bytes(counter_tx_id), get_timestamp_in_seconds(tx),
+            counter_currency.user_id, counter_user.user_id, user.user_id,
+            counter_amount, s_label)
+
 
     return jsonify({
         'amount': ('{0:.%df}' % (currency_spec.decimal)).format(
@@ -413,6 +539,21 @@ def swap_between_users(hex_mint_id=None, hex_counter_mint_id=None):
     })
 
 
+@api.route('/transactions/<string:hex_mint_id>', methods=['GET'])
+def show_transactions(hex_mint_id=None):
+    if hex_mint_id is None:
+        abort_by_missing_param('mint_id')
+
+    mint_id = bytes(binascii.a2b_hex(hex_mint_id))
+
+    name = request.args.get('name')
+    count = request.args.get('count')
+    offset = request.args.get('offset')
+
+    return jsonify(g.store.get_tx_list(mint_id, name=name, count=count,
+            offset=offset))
+
+
 @api.route('/transfer/<string:hex_mint_id>', methods=['POST'])
 def transfer_to_user(hex_mint_id=None):
     if hex_mint_id is None:
@@ -423,6 +564,14 @@ def transfer_to_user(hex_mint_id=None):
     hex_from_user_id = request.form.get('from_user_id')
     hex_to_user_id = request.form.get('to_user_id')
     amount = request.form.get('amount')
+    s_label = request.form.get('label')
+
+    if s_label is None or len(s_label) <= 0:
+        s_label = ''
+        label = None
+    else:
+        label_id = TransactionLabel.create_label_id(s_label, LABEL_SALT)
+        label = TransactionLabel(label_group_id, label_id=label_id)
 
     if hex_from_user_id is None:
         abort_by_missing_param('from_user_id')
@@ -441,8 +590,11 @@ def transfer_to_user(hex_mint_id=None):
     currency_spec = g.mint.get_currency_spec()
     value = int(float(amount) * (10 ** currency_spec.decimal))
 
-    g.mint.transfer(from_user.user_id, to_user.user_id, value,
+    tx = g.mint.transfer(from_user.user_id, to_user.user_id, value,
             keypair_from=from_user.keypair, keypair_mint=currency.keypair)
+
+    g.store.write_tx(tx.transaction_id, get_timestamp_in_seconds(tx),
+            currency.user_id, from_user.name, to_user.name, amount, s_label)
 
     return jsonify({
         'amount': ('{0:.%df}' % (currency_spec.decimal)).format(
@@ -492,7 +644,7 @@ def define_user():
     g.idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
     user_id, keypairs = g.idPubkeyMap.create_user_id(num_pubkeys=1)
 
-    g.store.write_user(name, User(user_id, keypairs[0]), 'user_table')
+    g.store.write_user(User(user_id, name, keypairs[0]), 'user_table')
 
     return jsonify({
         'name': name,

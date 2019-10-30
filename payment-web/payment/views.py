@@ -170,6 +170,7 @@ def transfer():
 
     to_name = request.form.get('to_name')
     amount = request.form.get('amount')
+    label = request.form.get('label')
 
     if to_name is None or len(to_name) <= 0:
         return render_template('payment/error.html',
@@ -178,6 +179,9 @@ def transfer():
     if amount is None or len(amount) <= 0:
         return render_template('payment/error.html',
                 message='amount is missing')
+
+    if label is None:
+        label = ''
 
     r = requests.get(PREFIX_API + '/api/user' + '?name=' + to_name)
     res = r.json()
@@ -191,7 +195,8 @@ def transfer():
     r = requests.post(PREFIX_API + '/api/transfer/' + MINT_ID, data={
         'from_user_id': user_id,
         'to_user_id': to_user_id,
-        'amount': amount
+        'amount': amount,
+        'label': label
     })
 
     if r.status_code != 200:

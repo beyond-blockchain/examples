@@ -1,7 +1,7 @@
 {% import 'payment/macro.html' as macros %}
 {% extends 'payment/layout.html' %}
 {% block content %}
-<h1>PAYMENT - BALANCE/TRANSFER</h1>
+<h1>PAYMENT</h1>
 <p>
 You are {{name}}<br/>
 Your balance is {{balance}} {{symbol}}
@@ -23,6 +23,10 @@ Your balance is {{balance}} {{symbol}}
     <label for="amount">Amount : </label>
     <input type="text" id="amount" name="amount">
     {{symbol}}
+  </div>
+  <div>
+    <label for="label">Label : </label>
+    <input type="text" id="label" name="label">
   </div>
   <input type="submit" value="Transfer">
 </form>
