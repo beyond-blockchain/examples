@@ -108,6 +108,9 @@ def list():
 
     for tx in res['transactions']:
         tx['timestamp'] = datetime.datetime.fromtimestamp(tx['timestamp'])
+        if len(tx['from_name']) <= 0:
+            tx['from_name'] = 'PAYMENT'
+            tx['label'] = '*JOINED*'
 
     return render_template('payment/list.html', name=name, count=LIST_COUNT,
             count_before=res['count_before'], count_after=res['count_after'],
