@@ -1,0 +1,42 @@
+{% import 'payment/macro.html' as macros %}
+{% extends 'payment/layout.html' %}
+{% block content %}
+<h1>PAYMENT - LIST</h1>
+<p>
+You are {{name}}
+</p>
+<table align="center">
+<tr>
+<th>Date-Time</th>
+<th>From</th>
+<th>-> To</th>
+<th>Amount</th>
+<th>What</th>
+</tr>
+{% for tx in transactions %}
+<tr>
+<td>{{tx['timestamp']}}</td>
+<td>{{tx['from_name']}}</td>
+<td>-> {{tx['to_name']}}</td>
+<td align="right">{{tx['amount']}} {{symbol}}</td>
+<td>{{tx['label']}}</td>
+</tr>
+{% endfor %}
+</table>
+<ul class="listnav">
+{% if count_before > 0 %}
+<li><a href="/payment/list?offset={{0 if count_before < count else count_before - count}}">&laquo; PREV</a></li>
+{% else %}
+<li><span style="color: #808080;">&laquo; PREV</span></li>
+{% endif %}
+{% if count_after > 0 %}
+<li><a href="/payment/list?offset={{count_before + count}}">NEXT &raquo;</a></li>
+{% else %}
+<li><span style="color: #808080;">NEXT &raquo;</span></li>
+{% endif %}
+</ul>
+
+<form action="/payment/" method="get">
+  <input type="submit" value="Back">
+</form>
+{% endblock %}

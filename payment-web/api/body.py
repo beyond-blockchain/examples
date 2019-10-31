@@ -100,21 +100,35 @@ class Store:
         self.db.close_db(domain_id, NAME_OF_DB)
 
 
-    def get_tx_list(self, mint_id, name=None, count=None, offset=None):
+    def get_tx_list(self, mint, name=None, count=None, offset=None,
+            basetime=None):
+        if basetime is None:
+            basetime = 0
+        else:
+            basetime = int(basetime)
+
         if offset is None:
             offset = 0
+        else:
+            offset = int(offset)
+
         if count is not None:
             s_limit = ' limit {0}, {1}'.format(offset, count)
         else:
             s_limit = ''
+
+        mint_id = mint.mint_id
+        symbol = mint.get_currency_spec().symbol
 
         if name is not None:
             rows = self.db.exec_sql(
                 domain_id,
                 NAME_OF_DB,
                 'select * from tx_table where mint_id=? ' + \
+                'and timestamp>=? ' + \
                 'and (from_name=? or to_name=?) order by rowid desc' + s_limit,
                 mint_id,
+                basetime,
                 name,
                 name
             )
@@ -122,8 +136,10 @@ class Store:
                 domain_id,
                 NAME_OF_DB,
                 'select count(*) from tx_table where mint_id=? ' + \
+                'and timestamp>=? ' + \
                 'and (from_name=? or to_name=?)',
                 mint_id,
+                basetime,
                 name,
                 name
             )
@@ -133,14 +149,18 @@ class Store:
                 domain_id,
                 NAME_OF_DB,
                 'select * from tx_table where mint_id=? ' + \
+                'and timestamp>=? ' + \
                 'order by rowid desc' + s_limit,
-                mint_id
+                mint_id,
+                basetime,
             )
             counts = self.db.exec_sql(
                 domain_id,
                 NAME_OF_DB,
-                'select count(*) from tx_table where mint_id=?',
-                mint_id
+                'select count(*) from tx_table where mint_id=? ' + \
+                'and timestamp>=?',
+                mint_id,
+                basetime
             )
 
         number = int(counts[0][0])
@@ -155,9 +175,10 @@ class Store:
                 'label': row[IDX_LABEL]
             })
         return {
-            'count_before': int(offset),
-            'count_after': number - int(offset) - len(rows),
+            'count_before': offset,
+            'count_after': number - offset - len(rows),
             'transactions': dics,
+            'symbol': symbol
         }
 
     def get_user(self, user_id, table):
@@ -545,13 +566,15 @@ def show_transactions(hex_mint_id=None):
         abort_by_missing_param('mint_id')
 
     mint_id = bytes(binascii.a2b_hex(hex_mint_id))
+    mint = token_lib.BBcMint(domain_id, mint_id, mint_id, g.idPubkeyMap)
 
     name = request.args.get('name')
     count = request.args.get('count')
     offset = request.args.get('offset')
+    basetime = request.args.get('basetime')
 
-    return jsonify(g.store.get_tx_list(mint_id, name=name, count=count,
-            offset=offset))
+    return jsonify(g.store.get_tx_list(mint, name=name, count=count,
+            offset=offset, basetime=basetime))
 
 
 @api.route('/transfer/<string:hex_mint_id>', methods=['POST'])

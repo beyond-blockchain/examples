@@ -68,6 +68,32 @@ p.resizeimage img {
   clear: both;
 }
 
+ul.listnav {
+	margin: 0 0 10px;
+	padding: 12px;
+	text-align: center;
+}
+
+ul.listnav li {
+	display: inline;
+	margin: 0 1px;
+	padding: 0;
+}
+
+ul.listnav li span,
+ul.listnav li a {
+	display: inline-block;
+	padding: 1px 8px;
+	background: #fff;
+	border: 1px solid #ccc;
+	vertical-align: middle;
+	text-decoration: none;
+}
+
+ul.listnav li a:hover {
+	background: #efefef;
+}
+
 @media screen and (max-width: 320px) {
   .elements dt{
     width: 100%;
