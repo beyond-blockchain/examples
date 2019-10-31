@@ -35,16 +35,22 @@ from io import BytesIO
 # and put the mint_id here.
 MINT_ID = 'e6500c9aefa1dddb4295dcfa102e574497dfa83baefa117b9f34f654606f876f'
 
-# Put the initial amount when signed up
+# Put the initial amount when signed up here.
 INIT_AMOUNT = '1000'
 
 # Put API host name here.
 PREFIX_API = 'http://127.0.0.1:5000'
 
+# Put base time (to count transactions) in Unix time here.
+BASE_TIME = 0
+
+# Put the number of transactions to show in a list page here.
+LIST_COUNT = 5
+
 
 def get_balance(name, user_id):
-    r = requests.get(PREFIX_API + '/api/status/' + user_id + \
-            '?mint_id=' + MINT_ID)
+    r = requests.get(PREFIX_API + '/api/status/' + user_id,
+            params={'mint_id': MINT_ID})
     res = r.json()
 
     if r.status_code != 200:
@@ -80,7 +86,35 @@ def index():
     return render_template('payment/index.html')
 
 
-@payment.route('receive')
+@payment.route('/list')
+def list():
+    if 'user_id' not in session:
+        return render_template('payment/index.html')
+
+    name = session['name']
+
+    offset = request.args.get('offset')
+
+    if offset is None:
+        offset = 0
+
+    r = requests.get(PREFIX_API + '/api/transactions/' + MINT_ID, params={
+        'name': name,
+        'basetime': BASE_TIME,
+        'count': LIST_COUNT,
+        'offset': offset,
+    })
+    res = r.json()
+
+    for tx in res['transactions']:
+        tx['timestamp'] = datetime.datetime.fromtimestamp(tx['timestamp'])
+
+    return render_template('payment/list.html', name=name, count=LIST_COUNT,
+            count_before=res['count_before'], count_after=res['count_after'],
+            transactions=res['transactions'], symbol=res['symbol'])
+
+
+@payment.route('/receive')
 def receive():
     if 'user_id' not in session:
         return render_template('payment/index.html')
@@ -104,7 +138,7 @@ def sign_in():
     if name is None or len(name) <= 0:
         return render_template('payment/error.html', message='name is missing')
 
-    r = requests.get(PREFIX_API + '/api/user' + '?name=' + name)
+    r = requests.get(PREFIX_API + '/api/user', params={'name': name})
     res = r.json()
 
     if r.status_code != 200:
@@ -170,6 +204,7 @@ def transfer():
 
     to_name = request.form.get('to_name')
     amount = request.form.get('amount')
+    label = request.form.get('label')
 
     if to_name is None or len(to_name) <= 0:
         return render_template('payment/error.html',
@@ -179,7 +214,10 @@ def transfer():
         return render_template('payment/error.html',
                 message='amount is missing')
 
-    r = requests.get(PREFIX_API + '/api/user' + '?name=' + to_name)
+    if label is None:
+        label = ''
+
+    r = requests.get(PREFIX_API + '/api/user', params={'name': to_name})
     res = r.json()
 
     if r.status_code != 200:
@@ -191,7 +229,8 @@ def transfer():
     r = requests.post(PREFIX_API + '/api/transfer/' + MINT_ID, data={
         'from_user_id': user_id,
         'to_user_id': to_user_id,
-        'amount': amount
+        'amount': amount,
+        'label': label
     })
 
     if r.status_code != 200:
