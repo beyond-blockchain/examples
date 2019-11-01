@@ -148,5 +148,5 @@ Before use, make sure that **S_CONTRACT_ADDRESS** and **S_NETWORK** in cert_flas
 ```
 python index.py
 ```
-The web service runs on localhost:5000. Try ```localhost:5000/?certificate=...&subtree=...``` to verify a certificate.
+The web service runs on localhost:5000. Try ```localhost:5000/cert/?certificate=...&subtree=...``` to verify a certificate.
 
