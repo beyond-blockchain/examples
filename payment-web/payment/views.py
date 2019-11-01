@@ -17,7 +17,6 @@ limitations under the License.
 import base64
 import bbc1
 import binascii
-import datetime
 import hashlib
 import json
 import os
@@ -27,6 +26,7 @@ import string
 import sys
 import time
 
+from datetime import datetime, timedelta, timezone
 from flask import Blueprint, render_template, request, session, abort, jsonify
 from io import BytesIO
 
@@ -38,14 +38,18 @@ MINT_ID = 'e6500c9aefa1dddb4295dcfa102e574497dfa83baefa117b9f34f654606f876f'
 # Put the initial amount when signed up here.
 INIT_AMOUNT = '1000'
 
-# Put API host name here.
+# Put API host name here, plus prefix for URL encoded in QR code.
 PREFIX_API = 'http://127.0.0.1:5000'
+PREFIX_QR  = 'http://127.0.0.1:5000'
 
 # Put base time (to count transactions) in Unix time here.
 BASE_TIME = 0
 
 # Put the number of transactions to show in a list page here.
 LIST_COUNT = 5
+
+
+JST = timezone(timedelta(hours=+9), 'JST')
 
 
 def get_balance(name, user_id):
@@ -107,7 +111,7 @@ def list():
     res = r.json()
 
     for tx in res['transactions']:
-        tx['timestamp'] = datetime.datetime.fromtimestamp(tx['timestamp'])
+        tx['timestamp'] = datetime.fromtimestamp(tx['timestamp'], JST)
         if len(tx['from_name']) <= 0:
             tx['from_name'] = 'PAYMENT'
             tx['label'] = '*JOINED*'
@@ -124,7 +128,7 @@ def receive():
 
     name = session['name']
 
-    s_url = PREFIX_API + '/payment/transfer?to_name=' + name
+    s_url = PREFIX_QR + '/payment/transfer?to_name=' + name
     qr_b64data = make_qr(s_url)
 
     return render_template('payment/receive.html', name=name,
