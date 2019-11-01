@@ -346,20 +346,26 @@ def list_currencies():
     name = request.args.get('name')
 
     if name is None:
-        return jsonify({})
-
-    else:
-        user = g.store.read_user(name, 'currency_table')
-        if user is None:
-            abort(404, {
-                'code': 'Not Found',
-                'message': 'currency {0} is not found'.format(name)
+        users = g.store.get_users('currency_table')
+        dics = []
+        for user in users:
+            dics.append({
+                'name': user.name,
+                'mint_id': binascii.b2a_hex(user.user_id).decode()
             })
+        return jsonify(dics)
 
-        return jsonify({
-            'name': name,
-            'mint_id': binascii.b2a_hex(user.user_id).decode()
+    user = g.store.read_user(name, 'currency_table')
+    if user is None:
+        abort(404, {
+            'code': 'Not Found',
+            'message': 'currency {0} is not found'.format(name)
         })
+
+    return jsonify({
+        'name': name,
+        'mint_id': binascii.b2a_hex(user.user_id).decode()
+    })
 
 
 @api.route('/currency', methods=['POST'])
@@ -631,7 +637,14 @@ def list_users():
     name = request.args.get('name')
 
     if name is None:
-        return jsonify({})
+        users = g.store.get_users('user_table')
+        dics = []
+        for user in users:
+            dics.append({
+                'name': user.name,
+                'user_id': binascii.b2a_hex(user.user_id).decode()
+            })
+        return jsonify(dics)
 
     else:
         user = g.store.read_user(name, 'user_table')
