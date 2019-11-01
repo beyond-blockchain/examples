@@ -14,20 +14,21 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 """
-import cert_flask
 from flask import Flask
 
 
 app = Flask(__name__)
 
 
-@app.route('/')
-def index():
-    return cert_flask.index('.')
+from cert.cert_flask import cert
+app.register_blueprint(cert, url_prefix='/cert')
+
+
+app.secret_key = 'feeH.sawQy4XnsjVpcMPZeCar*yzzXQNtwRgbgfF28iny'
 
 
 if __name__ == '__main__':
-    app.run()
+    app.run(host='0.0.0.0')
 
 
 # end of index.py
