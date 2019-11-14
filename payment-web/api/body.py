@@ -229,6 +229,18 @@ class Store:
                 indices=[IDX_MINT_ID, IDX_FROM, IDX_TO])
 
 
+    def update_user(self, user, table):
+        self.db.exec_sql(
+            domain_id,
+            NAME_OF_DB,
+            'update ' + table + ' set public_key=?, private_key=? ' + \
+            'where user_id=?',
+            user.keypair.public_key,
+            user.keypair.private_key,
+            user.user_id
+        )
+
+
     def user_exists(self, name, table):
         rows = self.db.exec_sql(
             domain_id,
@@ -450,9 +462,28 @@ def issue_to_user(hex_mint_id=None):
     })
 
 
-@api.route('/new-keypair', methods=['POST'])
-def replace_keypair():
-    return jsonify({})
+@api.route('/new-keypair/<string:hex_user_id>', methods=['POST'])
+def replace_keypair(hex_user_id=None):
+    if hex_user_id is None:
+        abort_by_missing_param('user_id')
+
+    user = from_hex_to_user(g, hex_user_id, 'user_table')
+    keypair_old = user.keypair
+
+    keypair = bbclib.KeyPair()
+    keypair.generate()
+
+    g.idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
+    g.idPubkeyMap.update(user.user_id,
+            public_keys_to_replace=[keypair.public_key], keypair=keypair_old)
+    
+    user.keypair = keypair
+    g.store.update_user(user, 'user_table')
+
+    return jsonify({
+        'old_pubkey': binascii.b2a_hex(keypair_old.public_key).decode(),
+        'new_pubkey': binascii.b2a_hex(keypair.public_key).decode()
+    })
 
 
 @api.route('/setup', methods=['POST'])
