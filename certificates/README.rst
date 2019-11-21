@@ -12,10 +12,10 @@ Also provides a sample Flask web app for verifying certificates.
 Dependencies
 ------------
 
--  bbc1 >= 1.3
--  bbc1-lib-registry >= 0.4
--  ledger_subsystem >= 0.13.2
--  Flask >= 1.0.1
+-  bbc1 >= 1.4
+-  bbc1-lib-registry >= 0.6
+-  ledger_subsystem >= 0.14.1
+-  Flask >= 1.1.1
 
 Installing dependencies
 -----------------------
@@ -197,7 +197,9 @@ cert_flask.py is modified according to your environment.
 
 ::
 
+   export WEB3_INFURA_PROJECT_ID=[infura.io project ID]
    python index.py
 
 The web service runs on localhost:5000. Try
-``localhost:5000/?certificate=...&subtree=...`` to verify a certificate.
+``localhost:5000/cert/?certificate=...&subtree=...`` to verify a
+certificate.

@@ -8,10 +8,10 @@ This app allows a user to do the following:
 Also provides a sample Flask web app for verifying certificates.
 
 ## Dependencies
-* bbc1 >= 1.3
-* bbc1-lib-registry >= 0.4
-* ledger_subsystem >= 0.13.2
-* Flask >= 1.0.1
+* bbc1 >= 1.4
+* bbc1-lib-registry >= 0.6
+* ledger_subsystem >= 0.14.1
+* Flask >= 1.1.1
 
 ## Installing dependencies
 You need to pip-install bbc1 and Flask. Others (BBc-1 libraries) are currently at their late development stages, and you will need to do `git clone -b develop [URI]`  to clone the project's development branch, go to the project directory and `python setup.py sdist` to generate an installer tar ball, and then `pip install dist/[tar.gz file]`.
@@ -146,6 +146,7 @@ This is a simple web service to verify a certificate using the query string gene
 Before use, make sure that **S_CONTRACT_ADDRESS** and **S_NETWORK** in cert_flask.py is modified according to your environment.
 
 ```
+export WEB3_INFURA_PROJECT_ID=[infura.io project ID]
 python index.py
 ```
 The web service runs on localhost:5000. Try ```localhost:5000/cert/?certificate=...&subtree=...``` to verify a certificate.
