@@ -98,16 +98,12 @@ def index():
         dic['digest'] = s[1]
         subtree.append(dic)
 
-    prevdir = os.getcwd()
-    os.chdir(bbc1.__path__[0] + '/core/ethereum')
-
     eth = bbc_ethereum.BBcEthereum(
         S_NETWORK,
         private_key=None,
-        contract_address=S_CONTRACT_ADDRESS
+        contract_address=S_CONTRACT_ADDRESS,
+        project_dir=bbc1.__path__[0] + '/core/ethereum'
     )
-
-    os.chdir(prevdir)
 
     block_no, digest0 = eth.verify_and_get_root(digest, subtree)
 
