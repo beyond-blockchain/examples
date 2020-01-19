@@ -25,6 +25,7 @@ import time
 import xml.etree.ElementTree as ET
 
 from bbc1.core.ethereum import bbc_ethereum
+from bbc1.lib import registry_lib
 from brownie import *
 from flask import Blueprint, render_template, request, redirect, url_for
 
@@ -72,19 +73,8 @@ def index():
     except ET.ParseError:
         return failure_template('xml-syntax')
 
-    dat = bytearray()
-    for e in root:
-        if e.tag == 'digest':
-            if all(c in string.hexdigits for c in e.text):
-                digest0 = binascii.a2b_hex(e.text)
-            else:
-                digest0 = bytes()
-            dat.extend(digest0)
-        else:
-            s = ET.tostring(e, encoding='utf-8')
-            dat.extend(hashlib.sha256(s).digest())
-
-    digest = hashlib.sha256(bytes(dat)).digest()
+    data = registry_lib.file(root)
+    digest = hashlib.sha256(data).digest()
 
     subtree = []
     nodes = subtree_string.split(':')

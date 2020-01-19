@@ -1,18 +1,25 @@
-{% macro show_certificate(root, get_date_string=None) -%}
-<div class="headline">Certificate</div>
-<div class="elements">
+{% macro show_content(container) -%}
 <dl>
-{% for e in root %}
+{% for e in container %}
 <dt>{{ e.tag }}:</dt>
 <dd>
 {% if e.tag == 'date' %}
 {{ get_date_string(e.text) }}
+{% elif 'container' in e.attrib and e.attrib['container'] == 'true' %}
+{{- show_content(e) -}}
 {% else %}
 {{ e.text }}
 {% endif %}
 </dd>
 {% endfor %}
 </dl>
+{%- endmacro %}
+
+
+{% macro show_certificate(root, get_date_string=None) -%}
+<div class="headline">Certificate</div>
+<div class="elements">
+{{ show_content(root) }}
 </div>
 {%- endmacro %}
 
