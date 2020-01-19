@@ -187,7 +187,16 @@ class Certifier:
             print("xml: {0}".format(ET.tostring(certificate.document.root,
                     encoding='utf-8').decode('utf-8')))
 
-        dic = self.get_verification_dict(certificate)
+        try:
+            dic = self.get_verification_dict(certificate)
+
+        except ValueError as error:
+            print("Failed: {0}".format(str(error)))
+            return
+
+        except KeyError as error:
+            print("Failed: algorithm {0} not supported".format(str(error)))
+            return
 
         if dic is None:
             print("Failed: not registered.")
