@@ -16,11 +16,21 @@ The specified certificate is not correctly formatted in XML.
 The specified Merkle subtree is not encoded properly.
 {% elif reason == 'digest-mismatch' %}
 The calculated Merkle root does not match with the stored value.
+{% elif reason == 'no-pubkey' %}
+Public key is not found in the signed document.
+{% elif reason == 'bad-sig' %}
+Signature is not verified for the signed document.
+{% elif reason == 'sig-algo' %}
+Specified digital signature algorithm is not supported.
 {% endif %}
 </p>
 </div>
 {% if root != '' %}
 {{ macros.show_certificate(root, get_date_string=get_date_string) }}
+{% endif %}
+
+{% if 'sig' in root.attrib %}
+{{ macros.show_signature(root) }}
 {% endif %}
 
 {{ macros.show_verifier(network, contract) }}

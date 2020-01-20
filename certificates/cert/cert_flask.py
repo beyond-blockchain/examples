@@ -73,7 +73,19 @@ def index():
     except ET.ParseError:
         return failure_template('xml-syntax')
 
-    data = registry_lib.file(root)
+    try:
+        data = registry_lib.file(root)
+
+    except ValueError as error:
+        s = str(error)
+        if s.startswith('pubkey'):
+            return failure_template('no-pubkey', root=root)
+        elif s.startswith('sig'):
+            return failure_template('bad-sig', root=root)
+
+    except KeyError as error:
+        return failure_template('sig-algo', root=root)
+
     digest = hashlib.sha256(data).digest()
 
     subtree = []
