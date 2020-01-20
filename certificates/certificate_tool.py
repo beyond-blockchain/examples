@@ -80,6 +80,10 @@ def sign_document(xml_string, private_key):
     if private_key is None:
         keypair = bbclib.KeyPair()
         keypair.generate()
+        print('Keep this privately:')
+        print('private key : {0}'.format(
+                binascii.b2a_hex(keypair.private_key).decode()))
+        print('')
 
     else:
         keypair = bbclib.KeyPair(privkey=binascii.a2b_hex(private_key))
@@ -90,6 +94,7 @@ def sign_document(xml_string, private_key):
 
     sig = keypair.sign(digest)
 
+    print('Put the following as attributes of your XML document root:')
     print('algo="{0}"'.format('ecdsa-p256v1'))
     print('sig="{0}"'.format(binascii.b2a_hex(sig).decode()))
     print('pubkey="{0}"'.format(binascii.b2a_hex(keypair.public_key).decode()))
