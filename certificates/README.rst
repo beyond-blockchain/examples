@@ -4,24 +4,28 @@ Certificates
 This app allows a user to do the following: \* register single or
 multiple certificates to BBc-1 and the ledger subsystem \* verify the
 content of certificates and the registration date & time. \* generate
-verification query strings so that certificates can be verified
-elsewhere.
+verification query strings (which can be the contents of certificate
+files) so that certificates can be verified elsewhere.
 
-Also provides a sample Flask web app for verifying certificates.
+Also provides a sample Flask web app for verifying certificates, and a
+tool for signed certificates and privacy control.
 
 Dependencies
 ------------
 
--  bbc1 >= 1.4
--  bbc1-lib-registry >= 0.6
+-  bbc1 >= 1.5
+-  py-bbclib >= 1.6
+-  bbc1-lib-std >= 0.19
+-  bbc1-lib-registry >= 0.8
 -  ledger_subsystem >= 0.14.1
 -  Flask >= 1.1.1
 
 Installing dependencies
 -----------------------
 
-You need to pip-install bbc1 and Flask. Others (BBc-1 libraries) are
-currently at their late development stages, and you will need to do
+You need to pip-install bbc1 and Flask. Others (BBc-1 libraries
+bbc1-lib-?? and ledger_subsystem) are currently at their late
+development stages, and you will need to do
 ``git clone -b develop [URI]`` to clone the project’s development
 branch, go to the project directory and ``python setup.py sdist`` to
 generate an installer tar ball, and then
@@ -93,6 +97,24 @@ There are tags that give special meanings to their text.
 
 -  **date** (first level) Unix time, presented as a date string for the
    time zone in the default locale of the environment.
+
+The following attributes have special meanings (functionality of
+bbc1-lib-registry).
+
+-  **container=“true”** Recursively apply the above algorithm for
+   cryptographic digests to child elements.
+-  **sig** Digital signature. Needs to be accompanied by **pubkey**. If
+   this attribute is present (typically at the top level element of a
+   certificate), the cryptographic digest of the part is considered
+   signed, the signature is verified, and the new digest is calculated
+   over concatination of the digest, the public key, the 2-byte key-type
+   code (see bbclib.KeyType) and the signature.
+-  **pubkey** Public key for verifying the signature.
+-  **algo** Digital signature algorithm in use. Currently supports
+   ECDSA_SECP256k1 (ecdsa-secp256k1) and ECDSA_P256v1 (ecdsa-p256v1).
+   ECDSA p256v1 is the default.
+
+“sample-nested-s.xml” is a sample with the above attributes.
 
 How to use certificates.py
 --------------------------
@@ -203,3 +225,15 @@ cert_flask.py is modified according to your environment.
 The web service runs on localhost:5000. Try
 ``localhost:5000/cert/?certificate=...&subtree=...`` to verify a
 certificate.
+
+If you put the query string into a file, you can try
+``localhost:5000/cert/upload`` to upload the file as a certificate to
+verify.
+
+How to use certificate_tool.py
+------------------------------
+
+This tool enables you to obtain the ``<digest/>`` for (part of)
+certificates for privacy control, and to generate key pairs and
+digitally sign your certificates. Try –help to see how exactly it can be
+used.
