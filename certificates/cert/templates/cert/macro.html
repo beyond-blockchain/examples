@@ -24,6 +24,25 @@
 {%- endmacro %}
 
 
+{% macro show_signature(container) -%}
+<div class="headline">Signature</div>
+<div class="elements">
+<dl>
+<dt>Algorithm:</dt>
+{% if 'algo' in container.attrib %}
+<dd>{{ container.attrib['algo'] }}</dd>
+{% else %}
+<dd>ecdsa-p256v1</dd>
+{% endif %}
+{% if 'pubkey' in container.attrib %}
+<dt>Public Key:</dt>
+<dd><span style="font-size: 0.8vw">{{ container.attrib['pubkey'] }}</span></dd>
+{% endif %}
+<dt>Signature:</dt><dd><span style="font-size: 0.8vw">{{ container.attrib['sig'] }}</span></dd>
+</dl>
+{%- endmacro %}
+
+
 {% macro show_verifier(network, contract, block_no=0, realtime=None, merkle_root=None) -%}
 <div class="headline">Verifier Information</div>
 <div class="elements">

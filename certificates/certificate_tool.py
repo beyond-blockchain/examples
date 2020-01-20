@@ -39,7 +39,7 @@ def argument_parser():
     parser = subparsers.add_parser('digest',
             help='Get <digest/> element')
     parser.add_argument('xml_string', action='store', default=None,
-            help='XML string to get SHA-256 digest of')
+            help='XML string to get SHA-256 digest of (or .xml file name)')
 
     # keypair command
     parser = subparsers.add_parser('keypair',
@@ -49,7 +49,7 @@ def argument_parser():
     parser = subparsers.add_parser('sign',
             help='Sign a document')
     parser.add_argument('xml_string', action='store', default=None,
-            help='Document XML string')
+            help='Document XML string (or .xml file name)')
 
     return argparser.parse_args()
 
@@ -65,13 +65,20 @@ def generate_keypair():
 
 
 def print_digest(xml_string, url_encode):
-    s = xml_string.encode('utf-8')
-    e = ET.fromstring(s)
+    if xml_string.endswith('.xml'):
+        tree = ET.parse(xml_string)
+        e = tree.getroot()
+        s = ET.tostring(e, encoding='utf-8')
+    else:
+        s = xml_string.encode('utf-8')
+        e = ET.fromstring(s)
+
     if 'container' in e.attrib and e.attrib['container'] == 'true' \
             and len(e) > 0:
         digest = hashlib.sha256(registry_lib.file(e)).digest()
     else:
         digest = hashlib.sha256(s).digest()
+
     sD = '<digest>{0}</digest>'.format(binascii.b2a_hex(digest).decode())
     print(urllib.parse.quote(sD, safe='') if url_encode else sD)
 
@@ -80,16 +87,26 @@ def sign_document(xml_string, private_key):
     if private_key is None:
         keypair = bbclib.KeyPair()
         keypair.generate()
+        print('Keep this privately:')
+        print('private key : {0}'.format(
+                binascii.b2a_hex(keypair.private_key).decode()))
+        print('')
 
     else:
         keypair = bbclib.KeyPair(privkey=binascii.a2b_hex(private_key))
 
-    s = xml_string.encode('utf-8')
-    e = ET.fromstring(s)
+    if xml_string.endswith('.xml'):
+        tree = ET.parse(xml_string)
+        e = tree.getroot()
+    else:
+        s = xml_string.encode('utf-8')
+        e = ET.fromstring(s)
+
     digest = hashlib.sha256(registry_lib.file(e)).digest()
 
     sig = keypair.sign(digest)
 
+    print('Put the following as attributes of your XML document root:')
     print('algo="{0}"'.format('ecdsa-p256v1'))
     print('sig="{0}"'.format(binascii.b2a_hex(sig).decode()))
     print('pubkey="{0}"'.format(binascii.b2a_hex(keypair.public_key).decode()))
