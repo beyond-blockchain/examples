@@ -18,51 +18,25 @@ import bbc1
 import binascii
 import datetime
 import hashlib
+import io
 import os
 import string
 import sys
 import time
+import urllib.parse
 import xml.etree.ElementTree as ET
 
 from bbc1.core.ethereum import bbc_ethereum
 from bbc1.lib import registry_lib
 from brownie import *
-from flask import Blueprint, render_template, request, redirect, url_for
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 
 
 S_CONTRACT_ADDRESS = '0xd123Ec03ACdbC36e4fA818c983C259049EE705e0'
 S_NETWORK = 'ropsten'
 
 
-def failure_template(reason, root=''):
-
-    return render_template('cert/failure.html',
-            title='Certificate Verification - Failure',
-            network=S_NETWORK, contract=S_CONTRACT_ADDRESS,
-            reason=reason, root=root,
-            get_date_string=get_date_string)
-
-
-def get_date_string(timestamp):
-
-    try:
-        s = str(datetime.datetime.fromtimestamp(int(timestamp))).split()
-
-    except ValueError:
-        return 'N/A'
-
-    return s[0]
-
-
-cert = Blueprint('cert', __name__, template_folder='templates',
-        static_folder='./static')
-
-
-@cert.route('/')
-def index():
-
-    cert_xml = request.args.get('certificate')
-    subtree_string = request.args.get('subtree')
+def certify(cert_xml, subtree_string):
 
     if cert_xml is None or subtree_string is None:
         return failure_template('no-query')
@@ -122,6 +96,76 @@ def index():
             block_no=block_no, realtime=realtime,
             get_date_string=get_date_string,
             merkle_root=binascii.b2a_hex(digest0).decode())
+
+
+def failure_template(reason, root=''):
+
+    return render_template('cert/failure.html',
+            title='Certificate Verification - Failure',
+            network=S_NETWORK, contract=S_CONTRACT_ADDRESS,
+            reason=reason, root=root,
+            get_date_string=get_date_string)
+
+
+def get_date_string(timestamp):
+
+    try:
+        s = str(datetime.datetime.fromtimestamp(int(timestamp))).split()
+
+    except ValueError:
+        return 'N/A'
+
+    return s[0]
+
+
+cert = Blueprint('cert', __name__, template_folder='templates',
+        static_folder='./static')
+
+
+@cert.route('/')
+def index():
+
+    cert_xml = request.args.get('certificate')
+    subtree_string = request.args.get('subtree')
+
+    return certify(cert_xml, subtree_string)
+
+
+@cert.route('/upload', methods=['GET', 'POST'])
+def upload():
+
+    if request.method == 'POST':
+        filebuf = request.files.get('file')
+        if filebuf is None:
+            flash('no file')
+            return redirect(request.url)
+
+        s = filebuf.stream.read()
+
+        dic = urllib.parse.parse_qs(s.decode('utf-8'))
+
+        l_cert_xml = dic['certificate'] if 'certificate' in dic else None
+        l_subtree_string = dic['subtree'] if 'subtree' in dic else None
+
+        return certify(l_cert_xml[0], l_subtree_string[0])
+
+    return '''
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8"/>
+<title>Upload Certificate</title>
+</head>
+<body>
+<h2>Upload a Certificate File</h2>
+<form method="post" enctype="multipart/form-data">
+<p>
+<input type="file" name="file"/>
+<input type="submit" value="Upload"/>
+</p>
+</form>
+</body>
+'''
 
 
 # end of cert_flask.py
