@@ -365,7 +365,7 @@ def list_currencies():
                 'name': user.name,
                 'mint_id': binascii.b2a_hex(user.user_id).decode()
             })
-        return jsonify(dics)
+        return jsonify({'currencies': dics})
 
     user = g.store.read_user(name, 'currency_table')
     if user is None:
@@ -675,7 +675,7 @@ def list_users():
                 'name': user.name,
                 'user_id': binascii.b2a_hex(user.user_id).decode()
             })
-        return jsonify(dics)
+        return jsonify({'users': dics})
 
     else:
         user = g.store.read_user(name, 'user_table')
