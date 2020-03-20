@@ -27,13 +27,12 @@ import sys
 import time
 
 from datetime import datetime, timedelta, timezone
-from flask import Blueprint, render_template, request, session, abort, jsonify, redirect
+from flask import Blueprint, render_template, request, session, abort, jsonify
 from io import BytesIO
 
 
 # Prior to use this web application, please define a currency using API,
 # and put the mint_id here.
-# MINT_ID = 'e6500c9aefa1dddb4295dcfa102e574497dfa83baefa117b9f34f654606f876f'
 
 # Put the initial amount when signed up here.
 INIT_AMOUNT = '1000'
