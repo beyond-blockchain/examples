@@ -1,11 +1,15 @@
 {% import 'payment/macro.html' as macros %}
 {% extends 'payment/layout.html' %}
 {% block content %}
-<h1>PAYMENT - SIGN IN</h1>
+<h2>SIGN IN</h2>
 <form action="/payment/sign-in" method="post">
   <div>
     <label for="name">Name : </label>
     <input type="text" id="name" name="name">
+  </div>
+  <div>
+    <label for="currency_name">Currency Name : </label>
+    <input type="text" id="currency_name" name="currency_name">
   </div>
   <input type="submit" value="Sign In">
 </form>

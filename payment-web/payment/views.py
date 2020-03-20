@@ -27,13 +27,13 @@ import sys
 import time
 
 from datetime import datetime, timedelta, timezone
-from flask import Blueprint, render_template, request, session, abort, jsonify
+from flask import Blueprint, render_template, request, session, abort, jsonify, redirect
 from io import BytesIO
 
 
 # Prior to use this web application, please define a currency using API,
 # and put the mint_id here.
-MINT_ID = 'e6500c9aefa1dddb4295dcfa102e574497dfa83baefa117b9f34f654606f876f'
+# MINT_ID = 'e6500c9aefa1dddb4295dcfa102e574497dfa83baefa117b9f34f654606f876f'
 
 # Put the initial amount when signed up here.
 INIT_AMOUNT = '1000'
@@ -54,7 +54,7 @@ JST = timezone(timedelta(hours=+9), 'JST')
 
 def get_balance(name, user_id):
     r = requests.get(PREFIX_API + '/api/status/' + user_id,
-            params={'mint_id': MINT_ID})
+            params={'mint_id': session['mint_id']})
     res = r.json()
 
     if r.status_code != 200:
@@ -89,6 +89,28 @@ def index():
 
     return render_template('payment/index.html')
 
+@payment.route('/currency', methods=['GET', 'POST'])
+def define_currency():
+    if request.method == 'GET':
+        return render_template('/payment/currency.html')
+    
+    name = request.form.get('name')
+    symbol = request.form.get('symbol')
+
+    r = requests.post(PREFIX_API + '/api/currency', 
+        json={'name': name, 'symbol': symbol})
+
+    res = r.json()
+
+    if 'error' in res:
+        return render_template('/payment/error.html', message=res['error'])
+
+    mint_id = res['mint_id']
+    session['mint_id'] = mint_id
+
+    return render_template('/payment/currency_spec.html', 
+                    name=name, symbol=symbol, mint_id=mint_id)
+
 
 @payment.route('/list')
 def list():
@@ -102,7 +124,7 @@ def list():
     if offset is None:
         offset = 0
 
-    r = requests.get(PREFIX_API + '/api/transactions/' + MINT_ID, params={
+    r = requests.get(PREFIX_API + '/api/transactions/' + session['mint_id'], params={
         'name': name,
         'basetime': BASE_TIME,
         'count': LIST_COUNT,
@@ -134,6 +156,12 @@ def receive():
     return render_template('payment/receive.html', name=name,
             qr_b64data=qr_b64data, qr_name=s_url)
 
+@payment.route('/setup', methods=['GET', 'POST'])
+def setup():
+    if request.method == 'GET':
+        r = requests.post(PREFIX_API + '/api/setup')
+        res = r.json()
+        return render_template('/payment/setup_success.html', domain_id=res['domain_id'])
 
 @payment.route('/sign-in', methods=['GET', 'POST'])
 def sign_in():
@@ -141,9 +169,13 @@ def sign_in():
         return render_template('payment/sign-in.html')
 
     name = request.form.get('name')
+    currency_name = request.form.get('currency_name')
 
     if name is None or len(name) <= 0:
         return render_template('payment/error.html', message='name is missing')
+
+    if currency_name is None or len(name) <= 0:
+        return render_template('payment/error.html', message='currency name is missing')
 
     r = requests.get(PREFIX_API + '/api/user', params={'name': name})
     res = r.json()
@@ -155,7 +187,17 @@ def sign_in():
     session['name'] = name
     session['user_id'] = res['user_id']
 
-    return get_balance(name, res['user_id'])
+    r = requests.get(PREFIX_API + '/api/currency', params={'name': currency_name})
+    res = r.json()
+
+    if r.status_code != 200:
+        return render_template('payment/error.html',
+                message=res['error']['message'])
+
+    session['currency_name'] = currency_name
+    session['mint_id'] = res['mint_id']
+
+    return get_balance(name, session['user_id'])
 
 
 @payment.route('/sign-out')
@@ -188,7 +230,7 @@ def sign_up():
     session['name'] = name
     session['user_id'] = user_id
 
-    r = requests.post(PREFIX_API + '/api/issue/' + MINT_ID,
+    r = requests.post(PREFIX_API + '/api/issue/' + session['mint_id'],
             data={'user_id': user_id, 'amount': INIT_AMOUNT})
 
     if r.status_code != 200:
@@ -233,7 +275,7 @@ def transfer():
 
     to_user_id = res['user_id']
 
-    r = requests.post(PREFIX_API + '/api/transfer/' + MINT_ID, data={
+    r = requests.post(PREFIX_API + '/api/transfer/' + session['mint_id'], data={
         'from_user_id': user_id,
         'to_user_id': to_user_id,
         'amount': amount,

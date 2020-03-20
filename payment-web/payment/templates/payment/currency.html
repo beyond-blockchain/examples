@@ -1,0 +1,13 @@
+{% import 'payment/macro.html' as macros %}
+{% extends 'payment/layout.html' %}
+{% block content %}
+<form action='/payment/currency' method='POST'>
+<label>Name
+<input type="text" name="name">
+</label>
+<label>Symbol
+<input type="text" name="symbol">
+</label>
+<input type="submit" value="define">
+</form>
+{% endblock %}
