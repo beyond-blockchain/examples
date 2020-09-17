@@ -380,16 +380,16 @@ def list_currencies():
     })
 
 @api.route('/currency/<string:hex_mint_id>', methods=['GET'])
-def get_currency_unique(mint_id=None):
-    if mint_id is None:
+def get_currency_unique(hex_mint_id=None):
+    if hex_mint_id is None:
         abort_by_missing_param('mint_id')
 
-    user = g.store.get_user(binascii.a2b_hex(mint_id), 'currency_table')
+    user = g.store.get_user(binascii.a2b_hex(hex_mint_id), 'currency_table')
 
     if user is None:
         abort(404, {
             'code': 'Not Found',
-            'message': 'mint_id {0} is not found'.format(mint_id)
+            'message': 'mint_id {0} is not found'.format(hex_mint_id)
         })
 
     return jsonify({
