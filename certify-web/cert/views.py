@@ -60,7 +60,8 @@ def build():
         if r.status_code != 200:
             return render_template('cert/error.html',
                     message=res['error']['message'])
-        return render_template('cert/results.html', results=json.dumps(res))
+        return render_template('cert/results.html',
+                results=json.dumps(res, indent=2))
 
     if 'proof' in request.form:
         r = requests.get(PREFIX_API + '/api/proof', headers=headers,
@@ -70,7 +71,8 @@ def build():
         if r.status_code != 200:
             return render_template('cert/error.html',
                     message=res['error']['message'])
-        return render_template('cert/results.html', results=json.dumps(res))
+        return render_template('cert/results.html',
+                results=json.dumps(res, indent=2))
 
     if 'verify' in request.form:
         r = requests.get(PREFIX_API + '/api/verify', headers=headers,
@@ -80,7 +82,8 @@ def build():
         if r.status_code != 200:
             return render_template('cert/error.html',
                     message=res['error']['message'])
-        return render_template('cert/results.html', results=json.dumps(res))
+        return render_template('cert/results.html',
+                results=json.dumps(res,    indent=2))
 
 
 # end of cert/views.py
