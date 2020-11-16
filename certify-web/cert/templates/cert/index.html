@@ -1,0 +1,13 @@
+{% import 'cert/macro.html' as macros %}
+{% extends 'cert/layout.html' %}
+{% block content %}
+<h1>CERT : Certificate Builder</h1>
+<form action="/cert/build" method="post">
+  <div>
+    <textarea id="json" name="json" cols="80" rows="20"></textarea>
+  </div>
+  <input type="submit" name="register" value="Register Document">
+  <input type="submit" name="proof" value="Get Certificate">
+  <input type="submit" name="verify" value="Verify Certificate">
+</form>
+{% endblock %}
