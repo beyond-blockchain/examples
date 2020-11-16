@@ -1,0 +1,11 @@
+{% import 'cert/macro.html' as macros %}
+{% extends 'cert/layout.html' %}
+{% block content %}
+<h3>Results</h3>
+<pre>
+{{results}}
+</pre>
+<form action="/cert/" method="get">
+  <input type="submit" value="Back To Top">
+</form>
+{% endblock %}
