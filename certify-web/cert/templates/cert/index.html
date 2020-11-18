@@ -6,8 +6,13 @@
   <div>
     <textarea id="json" name="json" cols="80" rows="20"></textarea>
   </div>
-  <input type="submit" name="register" value="Register Document">
-  <input type="submit" name="proof" value="Get Certificate">
-  <input type="submit" name="verify" value="Verify Certificate">
+  <button type="submit" name="register">Register Document</button>
+  <button type="submit" name="proof">Get Certificate</button>
+  <button type="submit" name="verify">Verify Certificate</button>
+  <input type="file" id="jsonfile">
+  <br/>
+  <button type="submit" name="digest">Get Digest</button>
+  <button type="submit" name="keypair">Generate Key Pair</button>
+  <button type="submit" name="sign">Sign Document</button>
 </form>
 {% endblock %}

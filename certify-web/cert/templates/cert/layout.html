@@ -4,6 +4,37 @@
 <title{{ title }}></title>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <link rel="stylesheet" href="/cert/static/css/style.css"/>
+<script language="javascript" type="text/javascript">
+window.addEventListener('load', () => {
+  const f = document.getElementById('jsonfile');
+  f.addEventListener('change', event => {
+    let input = event.target;
+    if (input.files.length == 0) {
+      console.log('File not selected.');
+      return;
+    }
+    const file = input.files[0];
+    const reader = new FileReader();
+    reader.onload = () => {
+      const area = document.getElementById('json');
+      area.innerHTML = reader.result;
+    };
+
+    reader.readAsText(file);
+  });
+});
+
+function downloadCertificate() {
+{% autoescape false %}
+  let blob = new Blob([`{{download}}`],{type:"application/json"});
+{% endautoescape %}
+  anchor = document.createElement('a');
+  anchor.href = URL.createObjectURL(blob);
+  anchor.setAttribute('download', 'certificate.json');
+  anchor.click();
+  return false;
+}
+</script>
 </head>
 <body style="visibility:hidden" onLoad="document.body.style.visibility='visible'">
 {% block content %}

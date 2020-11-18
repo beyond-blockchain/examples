@@ -36,7 +36,7 @@ from bbc1.lib.app_support_lib import Database, TransactionLabel
 from bbc1.lib.app_support_lib import get_timestamp_in_seconds
 
 from brownie import *
-from flask import Blueprint, request, abort, jsonify, g
+from flask import Blueprint, request, abort, jsonify, g, current_app
 
 
 NAME_OF_DB = 'certify_db'
@@ -124,31 +124,24 @@ class Store:
 
 
 def abort_by_bad_content_type(content_type):
-    abort(400, {
-        'code': 'Bad Request',
-        'message': 'Content-Type {0} is not expected'.format(content_type)
-    })
+    abort(400, description='Content-Type {0} is not expected'.format(
+            content_type))
+
+
+def abort_by_bad_json_format():
+    abort(400, description='Bad JSON format')
 
 
 def abort_by_merkle_root_not_found():
-    abort(404, {
-        'code': 'Not Found',
-        'message': 'Merkle root not stored'
-    })
+    abort(404, description='Merkle root not stored')
 
 
 def abort_by_subsystem_not_supported():
-    abort(400, {
-        'code': 'Bad Request',
-        'message': 'non-supported subsystem'
-    })
+    abort(400, description='non-supported subsystem')
 
 
 def abort_by_missing_param(param):
-    abort(400, {
-        'code': 'Bad Request',
-        'message': '{0} is missing'.format(param)
-    })
+    abort(400, description='{0} is missing'.format(param))
 
 
 def dict2xml(dic):
@@ -156,37 +149,64 @@ def dict2xml(dic):
     root = ET.fromstring('<c/>')
     dict2xml_element(root, dic)
 
+    current_app.logger.info('JSON to XML: {0}'.format(ET.tostring(root)))
+
     return root
 
 
 def dict2xml_element(element, value):
 
     if isinstance(value, dict):
+        element.set('container', 'true')
         for k, v in value.items():
-            if k == 'proof':
+            if k in ['proof', 'privkey']:
                 continue
-            e = ET.SubElement(element, k, {'container': 'true'})
+
+            if k in ['algo', 'sig', 'pubkey']:
+                element.set(k, v)
+                continue
+
+            e = ET.SubElement(element, k)
             dict2xml_element(e, v)
 
     elif isinstance(value, list):
+        element.set('container', 'true')
         for v in value:
             dict2xml_element(element, v)
 
     elif isinstance(value, bool):
-        element.text = str(value)
+        if element.text is None:
+            element.text = str(value)
+        else:
+            element.text += ',' + str(value)
 
     elif isinstance(value, int):
-        element.text = str(value)
+        if element.text is None:
+            element.text = str(value)
+        else:
+            element.text += ',' + str(value)
 
     elif isinstance(value, str):
-        element.text = value
+        if element.text is None:
+            element.text = value
+        else:
+            element.text += ',' + value
 
 
 def get_document(request):
     if request.headers['Content-Type'] != 'application/json':
         abort_by_bad_content_type(request.headers['Content-Type'])
 
-    root = dict2xml(request.get_json())
+    try:
+        root = dict2xml(request.get_json())
+
+    except Exception as e:
+        s = str(e).split(':')
+        if s[1].endswith('understand.'):
+            abort_by_bad_json_format()
+        else:
+            s0 = s[0].split()
+            abort(int(s0[0]), description=s[1].strip())
 
     id = root.findtext('id', default='N/A')
     return registry_lib.Document(
@@ -240,9 +260,36 @@ def index():
 @api.route('/digest', methods=['GET'])
 def get_digest():
     document = get_document(request)
-    digest = hashlib.sha256(document.file()).digest()
 
-    return jsonify({'digest': str(binascii.b2a_hex(digest), 'utf-8')})
+    size = len(document.root)
+
+    if size > 1:
+        digest = hashlib.sha256(document.file()).digest()
+
+    elif size == 1:
+        e = document.root[0]
+
+        if 'container' in e.attrib and e.attrib['container'] == 'true' \
+                and len(e) > 0:
+            digest = hashlib.sha256(registry_lib.file(e)).digest()
+        else:
+            digest = hashlib.sha256(ET.tostring(e, encoding='utf-8')).digest()
+
+    else:
+        abort_by_bad_json_format()
+
+    return jsonify({'digest': binascii.b2a_hex(digest).decode()})
+
+
+@api.route('/keypair', methods=['GET'])
+def get_keypair():
+    keypair = bbclib.KeyPair()
+    keypair.generate()
+
+    return jsonify({
+        'pubkey': binascii.b2a_hex(keypair.public_key).decode(),
+        'privkey': binascii.b2a_hex(keypair.private_key).decode()
+    })
 
 
 @api.route('/proof', methods=['GET'])
@@ -336,6 +383,28 @@ def setup():
     return jsonify({'domain_id': binascii.b2a_hex(domain_id).decode()})
 
 
+@api.route('/sign', methods=['GET'])
+def sign_document():
+    document = get_document(request)
+
+    privkey = request.json.get('privkey')
+
+    if privkey is None:
+        abort_by_missing_param('privkey')
+
+    keypair = bbclib.KeyPair(privkey=binascii.a2b_hex(privkey))
+
+    digest = hashlib.sha256(registry_lib.file(document.root)).digest()
+
+    sig = keypair.sign(digest)
+
+    return jsonify({
+        'algo': 'ecdsa-p256v1',
+        'sig': binascii.b2a_hex(sig).decode(),
+        'pubkey': binascii.b2a_hex(keypair.public_key).decode()
+    })
+
+
 @api.route('/verify', methods=['GET'])
 def verify_certificate():
     document = get_document(request)
@@ -348,27 +417,17 @@ def verify_certificate():
     spec = proof['spec']
     subtree = proof['subtree']
 
-    workingdir = bbc_config.DEFAULT_WORKING_DIR
-
-    bbcConfig = bbc_config.BBcConfig(workingdir,
-            os.path.join(workingdir, bbc_config.DEFAULT_CONFIG_FILE))
-    config = bbcConfig.get_config()
-
-    prevdir = os.getcwd()
-    os.chdir(bbc1.__path__[0] + '/core/ethereum')
-
-    # private key can be anything as it is unused for viewing blockchain.
+    # private key can be None as it is unused for viewing blockchain.
     eth = bbc_ethereum.BBcEthereum(
         spec['network'],
-        0x1234123412341234123412341234123412341234123412341234123412341234,
-        contract_address=spec['contract_address']
+        private_key=None,
+        contract_address=spec['contract_address'],
+        project_dir=bbc1.__path__[0] + '/core/ethereum'
     )
-
-    os.chdir(prevdir)
 
     digest = hashlib.sha256(document.file()).digest()
 
-    block_no = eth.verify(digest, subtree)
+    block_no, root = eth.verify_and_get_root(digest, subtree)
 
     if block_no <= 0:
         abort_by_merkle_root_not_found()
@@ -376,7 +435,10 @@ def verify_certificate():
     block = network.web3.eth.getBlock(block_no)
 
     return jsonify({
-        'block': str(block_no),
+        'network': spec['network'],
+        'contract_address': spec['contract_address'],
+        'block': block_no,
+        'root': binascii.b2a_hex(root).decode(),
         'time': block['timestamp']
     })
 
@@ -384,11 +446,21 @@ def verify_certificate():
 @api.errorhandler(400)
 @api.errorhandler(404)
 @api.errorhandler(409)
-def error_handler(error):
+def error_handler(e):
     return jsonify({'error': {
-        'code': error.description['code'],
-        'message': error.description['message']
-    }}), error.code
+        'code': e.code,
+        'name': e.name,
+        'description': e.description,
+    }}), e.code
+
+@api.errorhandler(ValueError)
+@api.errorhandler(KeyError)
+def error_handler(e):
+    return jsonify({'error': {
+        'code': 400,
+        'name': 'Bad Request',
+        'description': str(e),
+    }}), 400
 
 
 # end of api/body.py

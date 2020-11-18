@@ -10,6 +10,15 @@ p.resizeimage img {
   width: 80%;
 }
 
+pre {
+  margin: 1em 0;
+  padding: 1em;
+  border-radius: 5px;
+  background: #2f2f2f;
+  color: #fff;
+  white-space: pre-wrap;
+}
+
 .box {
   padding: 0.5em 1em;
   margin: 2em 0;

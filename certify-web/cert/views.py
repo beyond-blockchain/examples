@@ -48,42 +48,107 @@ def index():
 @cert.route('/build', methods=['POST'])
 def build():
     s = request.form.get('json')
-#   dic = json.loads(s)
 
     headers = {'Content-Type': 'application/json'}
 
     if 'register' in request.form:
-        r = requests.post(PREFIX_API + '/api/register', headers=headers,
-                data=s)
-        res = r.json()
+        dic = json.loads(s)
 
-        if r.status_code != 200:
-            return render_template('cert/error.html',
-                    message=res['error']['message'])
+        if '_docs' in dic:
+            docs = dic['_docs']
+            for doc in docs:
+                r = requests.post(PREFIX_API + '/api/register',
+                        headers=headers, data=json.dumps(doc, indent=2))
+                res = r.json()
+
+                if r.status_code != 200:
+                    return render_template('cert/error.html',
+                            message=json.dumps(res, indent=2))
+
+        else:
+            r = requests.post(PREFIX_API + '/api/register', headers=headers,
+                    data=s.encode('utf-8'))
+            res = r.json()
+
+            if r.status_code != 200:
+                return render_template('cert/error.html',
+                        message=json.dumps(res, indent=2))
+
         return render_template('cert/results.html',
-                results=json.dumps(res, indent=2))
+                results=json.dumps(res, indent=2),
+                note='This was a non-blocking call. '
+                + 'Writing a Merkle root to Ethereum is asynchronously '
+                + 'performed according to domain configuration.')
 
     if 'proof' in request.form:
         r = requests.get(PREFIX_API + '/api/proof', headers=headers,
-                data=s)
+                data=s.encode('utf-8'))
         res = r.json()
 
         if r.status_code != 200:
             return render_template('cert/error.html',
-                    message=res['error']['message'])
+                    message=json.dumps(res, indent=2))
+
+        s1 = s.strip().strip('}').strip()
+        s2 = json.dumps(res, indent=2).strip('{\n')
+
         return render_template('cert/results.html',
-                results=json.dumps(res, indent=2))
+                results=json.dumps(res, indent=2), download=s1+',\n'+s2)
 
     if 'verify' in request.form:
         r = requests.get(PREFIX_API + '/api/verify', headers=headers,
-                data=s)
+                data=s.encode('utf-8'))
         res = r.json()
 
         if r.status_code != 200:
             return render_template('cert/error.html',
-                    message=res['error']['message'])
+                    message=json.dumps(res, indent=2))
+
         return render_template('cert/results.html',
-                results=json.dumps(res,    indent=2))
+                results=json.dumps(res, indent=2),
+                note='Stored Time: {0}'.format(datetime.fromtimestamp(
+                res['time'])))
+
+    if 'digest' in request.form:
+        r = requests.get(PREFIX_API + '/api/digest', headers=headers,
+                data=s.encode('utf-8'))
+        res = r.json()
+
+        if r.status_code != 200:
+            return render_template('cert/error.html',
+                    message=json.dumps(res, indent=2))
+
+        return render_template('cert/results.html',
+                results=json.dumps(res, indent=2),
+                note='Replace the original key-value pair with the above pair '
+                + 'to conceal part of the certificate.')
+
+
+    if 'keypair' in request.form:
+        r = requests.get(PREFIX_API + '/api/keypair', headers=headers)
+        res = r.json()
+
+        if r.status_code != 200:
+            return render_template('cert/error.html',
+                    message=json.dumps(res, indent=2))
+
+        return render_template('cert/results.html',
+                results=json.dumps(res, indent=2),
+                note='Save "privkey" value (private key) safely.')
+
+
+    if 'sign' in request.form:
+        r = requests.get(PREFIX_API + '/api/sign', headers=headers,
+                data=s.encode('utf-8'))
+        res = r.json()
+
+        if r.status_code != 200:
+            return render_template('cert/error.html',
+                    message=json.dumps(res, indent=2))
+
+        return render_template('cert/results.html',
+                results=json.dumps(res, indent=2),
+                note='Put the above key-value pairs into your document.')
 
 
 # end of cert/views.py
