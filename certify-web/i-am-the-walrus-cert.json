@@ -1,0 +1,26 @@
+{
+  "id": "AR-1838B",
+  "title": "I Am the Walrus",
+  "artist": "The Beatles",
+  "writer": "Lennon-McCartney",
+  "year": "1967",
+  "proof": {
+    "spec": {
+      "subsystem": "ethereum",
+      "network": "ropsten",
+      "contract": "BBcAnchor",
+      "contract_address": "0x31e12b7b5214248184DaBa8071605CE3E92AcDa3",
+      "block": 9098749
+    },
+    "subtree": [
+      {
+        "position": "left",
+        "digest": "6578c8c585be7aa25e5619cedfbc02820c223d667a2561b92c9de9656fded793"
+      },
+      {
+        "position": "left",
+        "digest": "f4dc625076859a05ee753858ea3282c4cdb7290729f9a318b09238754c7c13f1"
+      }
+    ]
+  }
+}

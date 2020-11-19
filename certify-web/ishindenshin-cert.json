@@ -1,0 +1,34 @@
+{
+  "id": "YLR-709A",
+  "title": "以心電信",
+  "artist": "YMO",
+  "writer": [
+    {"name": "細野晴臣"},
+    {"name": "ピーター・バラカン"},
+    {"name": "坂本龍一"},
+    {"name": "高橋幸宏"}
+  ],
+  "year": "1983",
+  "algo": "ecdsa-p256v1",
+  "sig": "7f438f46f75ae3c403765447e552b1f163bd965199d7ca8530d4b21d34165e10f47367ba258111a19f6e45446b5a33a2e702a994c51aa55070caef95624e97f6",
+  "pubkey": "0430bacdd61b809d43c4bd3785d3b088e795920786ee8fe17d6984892d2471a4273d9b36dc64bcee042ff6ebf6af578215ba10b926a44335868a6f3584f9fa1927",
+  "proof": {
+    "spec": {
+      "subsystem": "ethereum",
+      "network": "ropsten",
+      "contract": "BBcAnchor",
+      "contract_address": "0x31e12b7b5214248184DaBa8071605CE3E92AcDa3",
+      "block": 9098893
+    },
+    "subtree": [
+      {
+        "position": "left",
+        "digest": "09f4d401024a84e80f37020344ae9388de538fe283cc41df41f19a557f1a0e12"
+      },
+      {
+        "position": "left",
+        "digest": "f8e4cd7b74a5cccb30ea455420b9000c81c63cef47460e1f34aa29c66f338342"
+      }
+    ]
+  }
+}

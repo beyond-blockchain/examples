@@ -1,11 +1,22 @@
 {% import 'cert/macro.html' as macros %}
 {% extends 'cert/layout.html' %}
 {% block content %}
-<h3>Results</h3>
+<h2>Results</h2>
+<h3>API Return Values</h3>
 <pre>
 {{results}}
 </pre>
+
+<h3>Notes</h3>
+{% if note %}
+<p>{{note}}</p>
+{% endif %}
+
+{% if download %}
+<a href="javascript:downloadCertificate();">Download Certificate</a>
+{% endif %}
+
 <form action="/cert/" method="get">
-  <input type="submit" value="Back To Top">
+  <button type="submit">Back To Top</button>
 </form>
 {% endblock %}

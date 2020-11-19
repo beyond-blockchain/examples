@@ -1,8 +1,12 @@
 {% import 'cert/macro.html' as macros %}
 {% extends 'cert/layout.html' %}
 {% block content %}
-<h1>CERT - ERROR</h1>
-<p>
+<h2>Error</h2>
+<pre>
 {{message}}
-</p>
+</pre>
+
+<form action="/cert/" method="get">
+  <button type="button" onclick="history.back();">Back</button>
+</form>
 {% endblock %}
