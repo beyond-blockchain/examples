@@ -8,7 +8,7 @@ The following set of API is provided:
 * **/api/verify** [GET] verifies the content of the certificate and the registration date & time.
 * **/api/setup** [POST] sets the environment (a BBc-1 domain and a simple database).
 
-In addition, the following API is provided for learning purposes (should not really be provided over the network):
+In addition, the following set of API is provided for learning purposes (should not really be provided over the network):
 * **/api/digest** [GET] gives SHA-256 digest of a given JSON (sub-)document.
 * **/api/keypair** [GET] generates a ECDSA p256v1 key pair.
 * **/api/sign** [GET] signs and returns the signature, the algorithm and the public key for a given JSON (sub-)document and a private key.
@@ -65,6 +65,7 @@ Below, it is assumed that "bbc_core.py" runs at the user's home directory, and E
 2. Start bbc_core.py
 
 3. Set up the API
+
     POST 'api/setup' to set up.
     ```shell
     $ curl -X POST http://IP_ADDRESS:PORT/api/setup
@@ -85,4 +86,4 @@ Below, it is assumed that "bbc_core.py" runs at the user's home directory, and E
 
 7. Start index.py of this example
 
-    By default, the server runs at "http://localhost:5000/cert". You can paste your JSON document onto the text area or open an existing JSON file for processing.
+    By default, the server runs at "http://localhost:5000/cert". You can paste your JSON document onto the text area, or open an existing JSON file for processing.
