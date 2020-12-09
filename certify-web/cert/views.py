@@ -40,6 +40,14 @@ cert = Blueprint('cert', __name__, template_folder='templates',
         static_folder='./static')
 
 
+def make_400_error(s):
+    return {'error': {
+        'code': 400,
+        'name': 'Bad Request',
+        'description': s,
+    }}
+
+
 @cert.route('/')
 def index():
     return render_template('cert/index.html')
@@ -52,10 +60,30 @@ def build():
     headers = {'Content-Type': 'application/json'}
 
     if 'register' in request.form:
-        dic = json.loads(s)
+
+        try:
+            dic = json.loads(s)
+
+        except:
+            return render_template('cert/error.html',
+                        message=json.dumps(make_400_error('Bad JSON format'),
+                        indent=2))
 
         if '_docs' in dic:
             docs = dic['_docs']
+
+            # check for duplication
+            for doc in docs:
+                r = requests.get(PREFIX_API + '/api/proof', headers=headers,
+                        data=json.dumps(doc, indent=2))
+                res = r.json()
+
+                if r.status_code == 200:
+                    return render_template('cert/error.html',
+                            message=json.dumps(make_400_error(
+                            'Document already exists'), indent=2))
+
+            # registration
             for doc in docs:
                 r = requests.post(PREFIX_API + '/api/register',
                         headers=headers, data=json.dumps(doc, indent=2))
@@ -66,6 +94,17 @@ def build():
                             message=json.dumps(res, indent=2))
 
         else:
+            # check for duplication
+            r = requests.get(PREFIX_API + '/api/proof', headers=headers,
+                    data=s.encode('utf-8'))
+            res = r.json()
+
+            if r.status_code == 200:
+                return render_template('cert/error.html',
+                        message=json.dumps(make_400_error(
+                        'Document already exists'), indent=2))
+
+            # registration
             r = requests.post(PREFIX_API + '/api/register', headers=headers,
                     data=s.encode('utf-8'))
             res = r.json()
