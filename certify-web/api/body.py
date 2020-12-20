@@ -167,6 +167,8 @@ def dict2xml_element(element, value):
                 element.set(k, v)
                 continue
 
+            if k.startswith('digest'):
+                k = 'digest'
             e = ET.SubElement(element, k)
             dict2xml_element(e, v)
 
