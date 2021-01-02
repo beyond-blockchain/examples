@@ -87,3 +87,5 @@ Below, it is assumed that "bbc_core.py" runs at the user's home directory, and E
 7. Start index.py of this example
 
     By default, the server runs at "http://localhost:5000/cert". You can paste your JSON document onto the text area, or open an existing JSON file for processing.
+
+**certify_tool.py** is a utility program to print the query string for a certificate that is compatible with "certificates" example.

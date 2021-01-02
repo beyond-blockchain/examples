@@ -149,8 +149,12 @@ def dict2xml(dic):
     root = ET.fromstring('<c/>')
     dict2xml_element(root, dic)
 
-    current_app.logger.info('JSON to XML: {0}'.format(ET.tostring(root,
-            encoding='utf-8').decode()))
+    try:
+        current_app.logger.info('JSON to XML: {0}'.format(ET.tostring(root,
+                encoding='utf-8').decode()))
+
+    except RuntimeError:
+        pass
 
     return root
 
@@ -342,21 +346,11 @@ def get_proof_for_document():
 def register_document():
     document = get_document(request)
 
-    registry = g.store.read_user(NAME_REGISTRY)
-    user = g.store.read_user(NAME_USER)
-
-    g.idPubkeyMap = id_lib.BBcIdPublickeyMap(domain_id)
-    g.registry = registry_lib.BBcRegistry(domain_id, registry.user_id,
-            registry.user_id, g.idPubkeyMap)
-
-    g.registry.register_document(user.user_id, document,
-            registry_lib.DocumentSpec(description="certificate"),
-            keypair=registry.keypair)
+    digest = hashlib.sha256(document.file()).digest()
 
     g.client = run_client()
 
-    g.client.register_in_ledger_subsystem(None,
-            g.registry.get_document_digest(document.document_id))
+    g.client.register_in_ledger_subsystem(None, digest)
     dat = wait_check_result_msg_type(g.client.callback,
             bbclib.MsgType.RESPONSE_REGISTER_HASH_IN_SUBSYS)
 
