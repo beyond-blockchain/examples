@@ -149,8 +149,12 @@ def dict2xml(dic):
     root = ET.fromstring('<c/>')
     dict2xml_element(root, dic)
 
-    current_app.logger.info('JSON to XML: {0}'.format(ET.tostring(root,
-            encoding='utf-8').decode()))
+    try:
+        current_app.logger.info('JSON to XML: {0}'.format(ET.tostring(root,
+                encoding='utf-8').decode()))
+
+    except RuntimeError:
+        pass
 
     return root
 
