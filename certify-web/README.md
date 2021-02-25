@@ -52,6 +52,7 @@ There are keys that give special meanings to their value:
 * **pubkey** Public key to verify a signature.
 * **sig** Digital signature. Needs to be accompanied by **pubkey**. If this key is present, the cryptographic digest of the document (or part of the document, depending on where this key appears) is considered signed, the signature is verified, and the new digest is calculated over concatination of the digest, the public key, the 2-byte key-type code (see bbclib.KeyType) and the signature. Please see "ishindenshin-cert.json" sample certificate.
 * **algo** Digital signature algorithm in use. Currently supports ECDSA_SECP256k1 (ecdsa-secp256k1) and ECDSA_P256v1 (ecdsa-p256v1). ECDSA p256v1 is the default.
+* **salt** If this key is present and the value is a dictionary, the key-value pairs in the dictionary are considered to specify salts for the keys to calculate digests, if those keys are found at the same level as this key.
 
 ## How to use this example
 Below, it is assumed that "bbc_core.py" runs at the user's home directory, and Ethereum's ropsten testnet is used (and you have a sufficient amount of ETH (1 would be more than enough) in an account in ropsten). At first, "bbc_core.py" should be stopped.
