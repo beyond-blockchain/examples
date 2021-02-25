@@ -173,6 +173,14 @@ def dict2xml_element(element, value):
 
             if k.startswith('digest'):
                 k = 'digest'
+
+            if k == 'salt' and isinstance(v, dict):
+                for kSalt, vSalt in v.items():
+                    e = element.find(kSalt)
+                    if e is not None:
+                        e.set(k, vSalt)
+                continue
+
             e = ET.SubElement(element, k)
             dict2xml_element(e, v)
 
