@@ -15,10 +15,10 @@
   "proof": {
     "spec": {
       "subsystem": "ethereum",
-      "network": "ropsten",
+      "network": "goerli",
       "contract": "BBcAnchor",
-      "contract_address": "0x31e12b7b5214248184DaBa8071605CE3E92AcDa3",
-      "block": 9098893
+      "contract_address": "0x8c6DB26Ab0eAaDcB46438DDEEE7baD2271e2df71",
+      "block": 7986026
     },
     "subtree": [
       {
